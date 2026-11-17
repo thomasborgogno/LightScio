@@ -1,5 +1,6 @@
 //! Data model: fixtures, rig, songs, analysis results and the editable show.
 
+use crate::i18n::ts;
 use serde::{Deserialize, Serialize};
 
 // ---------------------------------------------------------------- fixtures
@@ -55,27 +56,27 @@ impl ChannelKind {
     ];
     pub fn label(self) -> &'static str {
         match self {
-            ChannelKind::Dimmer => "Dimmer (intensità)",
-            ChannelKind::Red => "Rosso",
-            ChannelKind::Green => "Verde",
-            ChannelKind::Blue => "Blu",
-            ChannelKind::White => "Bianco",
-            ChannelKind::Amber => "Ambra",
-            ChannelKind::Uv => "UV",
-            ChannelKind::Pan => "Pan",
-            ChannelKind::PanFine => "Pan fine",
-            ChannelKind::Tilt => "Tilt",
-            ChannelKind::TiltFine => "Tilt fine",
-            ChannelKind::PanTiltSpeed => "Velocità pan/tilt",
-            ChannelKind::Shutter => "Shutter / strobo",
-            ChannelKind::Strobe => "Strobo (0 = spento)",
-            ChannelKind::ColorWheel => "Ruota colori",
-            ChannelKind::Gobo => "Gobo",
-            ChannelKind::Prism => "Prisma",
-            ChannelKind::Focus => "Fuoco",
-            ChannelKind::Zoom => "Zoom",
-            ChannelKind::Fixed => "Valore fisso",
-            ChannelKind::Other => "Altro",
+            ChannelKind::Dimmer => ts("Dimmer (intensità)"),
+            ChannelKind::Red => ts("Rosso"),
+            ChannelKind::Green => ts("Verde"),
+            ChannelKind::Blue => ts("Blu"),
+            ChannelKind::White => ts("Bianco"),
+            ChannelKind::Amber => ts("Ambra"),
+            ChannelKind::Uv => ts("UV"),
+            ChannelKind::Pan => ts("Pan"),
+            ChannelKind::PanFine => ts("Pan fine"),
+            ChannelKind::Tilt => ts("Tilt"),
+            ChannelKind::TiltFine => ts("Tilt fine"),
+            ChannelKind::PanTiltSpeed => ts("Velocità pan/tilt"),
+            ChannelKind::Shutter => ts("Shutter / strobo"),
+            ChannelKind::Strobe => ts("Strobo (0 = spento)"),
+            ChannelKind::ColorWheel => ts("Ruota colori"),
+            ChannelKind::Gobo => ts("Gobo"),
+            ChannelKind::Prism => ts("Prisma"),
+            ChannelKind::Focus => ts("Fuoco"),
+            ChannelKind::Zoom => ts("Zoom"),
+            ChannelKind::Fixed => ts("Valore fisso"),
+            ChannelKind::Other => ts("Altro"),
         }
     }
 }
@@ -89,7 +90,7 @@ pub struct ChannelDef {
 }
 
 pub fn ch(name: &str, kind: ChannelKind, default: u8) -> ChannelDef {
-    ChannelDef { name: name.to_string(), kind, default }
+    ChannelDef { name: crate::i18n::t(name), kind, default }
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Debug, Hash)]
@@ -117,14 +118,14 @@ impl FixtureKind {
     ];
     pub fn label(self) -> &'static str {
         match self {
-            FixtureKind::Par => "PAR LED",
-            FixtureKind::Blinder => "Accecatore (blinder)",
-            FixtureKind::Strobe => "Strobo",
-            FixtureKind::MovingSpot => "Testa mobile Spot",
-            FixtureKind::MovingBeam => "Testa mobile Beam",
-            FixtureKind::MovingWash => "Testa mobile Wash",
-            FixtureKind::LedBar => "Barra LED",
-            FixtureKind::Other => "Altro",
+            FixtureKind::Par => ts("PAR LED"),
+            FixtureKind::Blinder => ts("Accecatore (blinder)"),
+            FixtureKind::Strobe => ts("Strobo"),
+            FixtureKind::MovingSpot => ts("Testa mobile Spot"),
+            FixtureKind::MovingBeam => ts("Testa mobile Beam"),
+            FixtureKind::MovingWash => ts("Testa mobile Wash"),
+            FixtureKind::LedBar => ts("Barra LED"),
+            FixtureKind::Other => ts("Altro"),
         }
     }
     pub fn is_moving(self) -> bool {
@@ -198,28 +199,28 @@ impl FixtureDef {
     pub fn capabilities(&self) -> String {
         let mut v = vec![];
         if self.has(ChannelKind::Dimmer) {
-            v.push("dimmer");
+            v.push(ts("dimmer"));
         }
         if self.has_rgb() {
-            v.push("colori RGB");
+            v.push(ts("colori RGB"));
         }
         if self.has(ChannelKind::White) {
-            v.push("bianco");
+            v.push(ts("bianco"));
         }
         if self.has(ChannelKind::ColorWheel) {
-            v.push("ruota colori");
+            v.push(ts("ruota colori"));
         }
         if self.has(ChannelKind::Pan) || self.has(ChannelKind::Tilt) {
-            v.push("movimento pan/tilt");
+            v.push(ts("movimento pan/tilt"));
         }
         if self.has(ChannelKind::Shutter) || self.has(ChannelKind::Strobe) {
-            v.push("strobo");
+            v.push(ts("strobo"));
         }
         if self.has(ChannelKind::Gobo) {
-            v.push("gobo");
+            v.push(ts("gobo"));
         }
         if self.has(ChannelKind::Prism) {
-            v.push("prisma");
+            v.push(ts("prisma"));
         }
         v.join(", ")
     }
@@ -251,14 +252,14 @@ impl Group {
     ];
     pub fn label(self) -> &'static str {
         match self {
-            Group::FrontWash => "Wash frontale",
-            Group::BackWash => "Controluce (PAR dietro)",
-            Group::Blinders => "Accecatori",
-            Group::HeadsFront => "Teste mobili davanti",
-            Group::HeadsBack => "Teste mobili dietro",
-            Group::Strobes => "Strobo",
-            Group::Bars => "Barre LED",
-            Group::Extra => "Altro",
+            Group::FrontWash => ts("Wash frontale"),
+            Group::BackWash => ts("Controluce (PAR dietro)"),
+            Group::Blinders => ts("Accecatori"),
+            Group::HeadsFront => ts("Teste mobili davanti"),
+            Group::HeadsBack => ts("Teste mobili dietro"),
+            Group::Strobes => ts("Strobo"),
+            Group::Bars => ts("Barre LED"),
+            Group::Extra => ts("Altro"),
         }
     }
     pub fn idx(self) -> usize {
@@ -334,16 +335,16 @@ impl TrackRole {
     ];
     pub fn label(self) -> &'static str {
         match self {
-            TrackRole::Drums => "Batteria",
-            TrackRole::Kick => "Cassa",
-            TrackRole::Snare => "Rullante",
-            TrackRole::Bass => "Basso",
-            TrackRole::Guitar => "Chitarre",
-            TrackRole::Keys => "Tastiere / synth",
-            TrackRole::Vocals => "Voci / cori",
-            TrackRole::Click => "Click / guida",
-            TrackRole::Other => "Altro strumento",
-            TrackRole::Ignore => "Ignora",
+            TrackRole::Drums => ts("Batteria"),
+            TrackRole::Kick => ts("Cassa"),
+            TrackRole::Snare => ts("Rullante"),
+            TrackRole::Bass => ts("Basso"),
+            TrackRole::Guitar => ts("Chitarre"),
+            TrackRole::Keys => ts("Tastiere / synth"),
+            TrackRole::Vocals => ts("Voci / cori"),
+            TrackRole::Click => ts("Click / guida"),
+            TrackRole::Other => ts("Altro strumento"),
+            TrackRole::Ignore => ts("Ignora"),
         }
     }
     pub fn is_drum(self) -> bool {
@@ -417,15 +418,15 @@ impl SectionKind {
     ];
     pub fn label(self) -> &'static str {
         match self {
-            SectionKind::Intro => "Intro",
-            SectionKind::Verse => "Strofa",
-            SectionKind::PreChorus => "Pre-ritornello",
-            SectionKind::Chorus => "Ritornello",
-            SectionKind::Bridge => "Bridge / special",
-            SectionKind::Solo => "Assolo",
-            SectionKind::Break => "Stacco / break",
-            SectionKind::Outro => "Finale",
-            SectionKind::Other => "Altro",
+            SectionKind::Intro => ts("Intro"),
+            SectionKind::Verse => ts("Strofa"),
+            SectionKind::PreChorus => ts("Pre-ritornello"),
+            SectionKind::Chorus => ts("Ritornello"),
+            SectionKind::Bridge => ts("Bridge / special"),
+            SectionKind::Solo => ts("Assolo"),
+            SectionKind::Break => ts("Stacco / break"),
+            SectionKind::Outro => ts("Finale"),
+            SectionKind::Other => ts("Altro"),
         }
     }
     pub fn color(self) -> [u8; 3] {
@@ -445,15 +446,15 @@ impl SectionKind {
 
 pub fn intensity_label(i: f32) -> &'static str {
     if i < 0.2 {
-        "Calmo"
+        ts("Calmo")
     } else if i < 0.4 {
-        "Morbido"
+        ts("Morbido")
     } else if i < 0.6 {
-        "Medio"
+        ts("Medio")
     } else if i < 0.8 {
-        "Energico"
+        ts("Energico")
     } else {
-        "Esplosivo"
+        ts("Esplosivo")
     }
 }
 
@@ -479,10 +480,10 @@ impl HitKind {
     pub const ALL: [HitKind; 4] = [HitKind::Blinder, HitKind::Strobe, HitKind::Flash, HitKind::Blackout];
     pub fn label(self) -> &'static str {
         match self {
-            HitKind::Blinder => "Accecatori",
-            HitKind::Strobe => "Strobo",
-            HitKind::Flash => "Flash bianco totale",
-            HitKind::Blackout => "Blackout (stacco)",
+            HitKind::Blinder => ts("Accecatori"),
+            HitKind::Strobe => ts("Strobo"),
+            HitKind::Flash => ts("Flash bianco totale"),
+            HitKind::Blackout => ts("Blackout (stacco)"),
         }
     }
     pub fn color(self) -> [u8; 3] {
@@ -693,16 +694,16 @@ impl Effect {
     ];
     pub fn label(self) -> &'static str {
         match self {
-            Effect::Static => "Fisso",
-            Effect::Pulse => "Pulsa a tempo",
-            Effect::Kick => "Segue la cassa",
-            Effect::Snare => "Segue il rullante",
-            Effect::Chase => "Rincorsa (chase)",
-            Effect::Alternate => "Alternato pari/dispari",
-            Effect::Breath => "Respiro lento",
-            Effect::Sparkle => "Scintillio casuale",
-            Effect::ColorChase => "Giro di colori",
-            Effect::Off => "Spento",
+            Effect::Static => ts("Fisso"),
+            Effect::Pulse => ts("Pulsa a tempo"),
+            Effect::Kick => ts("Segue la cassa"),
+            Effect::Snare => ts("Segue il rullante"),
+            Effect::Chase => ts("Rincorsa (chase)"),
+            Effect::Alternate => ts("Alternato pari/dispari"),
+            Effect::Breath => ts("Respiro lento"),
+            Effect::Sparkle => ts("Scintillio casuale"),
+            Effect::ColorChase => ts("Giro di colori"),
+            Effect::Off => ts("Spento"),
         }
     }
 }
@@ -732,14 +733,14 @@ impl Movement {
     ];
     pub fn label(self) -> &'static str {
         match self {
-            Movement::Still => "Fermo",
-            Movement::Circle => "Cerchio",
-            Movement::Figure8 => "Otto",
-            Movement::PanSweep => "Spazzata orizzontale",
-            Movement::TiltSweep => "Spazzata verticale",
-            Movement::Ballyhoo => "Ballyhoo (caotico)",
-            Movement::Crowd => "Sul pubblico",
-            Movement::Fan => "Ventaglio",
+            Movement::Still => ts("Fermo"),
+            Movement::Circle => ts("Cerchio"),
+            Movement::Figure8 => ts("Otto"),
+            Movement::PanSweep => ts("Spazzata orizzontale"),
+            Movement::TiltSweep => ts("Spazzata verticale"),
+            Movement::Ballyhoo => ts("Ballyhoo (caotico)"),
+            Movement::Crowd => ts("Sul pubblico"),
+            Movement::Fan => ts("Ventaglio"),
         }
     }
 }
@@ -854,8 +855,8 @@ pub enum DmxProtocol {
 impl DmxProtocol {
     pub fn label(self) -> &'static str {
         match self {
-            DmxProtocol::OpenDmx => "Open DMX / FTDI (dongle economici)",
-            DmxProtocol::EnttecPro => "Compatibile Enttec DMX USB Pro",
+            DmxProtocol::OpenDmx => ts("Open DMX / FTDI (dongle economici)"),
+            DmxProtocol::EnttecPro => ts("Compatibile Enttec DMX USB Pro"),
         }
     }
 }

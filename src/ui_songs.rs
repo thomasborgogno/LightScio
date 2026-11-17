@@ -1,6 +1,8 @@
 //! "Brani e analisi" tab: songs, multitrack import and analysis results.
 
 use crate::app::*;
+#[allow(unused_imports)]
+use crate::i18n::{t, ts};
 use crate::model::*;
 use egui::{Color32, RichText};
 
@@ -52,22 +54,22 @@ impl App {
                                 s.sections[i].end = t;
                                 let mut n = sec.clone();
                                 n.start = t;
-                                n.label = format!("{} (b)", sec.label);
+                                n.label = crate::i18n::t(&format!("{} (b)", sec.label));
                                 s.sections.insert(i + 1, n);
                             }
                         }
                     }
                     _ => {}
                 }
-                self.status = "Parti aggiornate (Annulla nella scheda Show per tornare indietro). Rigenera lo show per adattare le luci.".into();
+                self.status = ts("Parti aggiornate (Annulla nella scheda Show per tornare indietro). Rigenera lo show per adattare le luci.").into();
             }
         }
     }
 
     fn pick_tracks() -> Vec<TrackInfo> {
         let files = rfd::FileDialog::new()
-            .set_title("Scegli le tracce separate del brano (MP3, WAV, FLAC, OGG)")
-            .add_filter("Audio", &["mp3", "wav", "flac", "ogg"])
+            .set_title(ts("Scegli le tracce separate del brano (MP3, WAV, FLAC, OGG)"))
+            .add_filter(ts("Audio"), &["mp3", "wav", "flac", "ogg"])
             .pick_files()
             .unwrap_or_default();
         files
@@ -81,8 +83,8 @@ impl App {
 
     pub fn ui_songs(&mut self, ctx: &egui::Context) {
         egui::SidePanel::left("songs").default_width(260.0).resizable(true).show(ctx, |ui| {
-            ui.heading("Scaletta");
-            ui.label(RichText::new("Il numero è il Program Change MIDI che seleziona il brano dal vivo.").size(11.0).color(Color32::GRAY));
+            ui.heading(ts("Scaletta"));
+            ui.label(RichText::new(ts("Il numero è il Program Change MIDI che seleziona il brano dal vivo.")).size(11.0).color(Color32::GRAY));
             let mut pick = None;
             let mut mv: Option<(usize, usize)> = None;
             let n = self.project.songs.len();
@@ -116,7 +118,7 @@ impl App {
                 self.select_song(i);
             }
             ui.separator();
-            if ui.button(RichText::new("➕ Nuovo brano dalle tracce…").strong()).clicked() {
+            if ui.button(RichText::new(ts("➕ Nuovo brano dalle tracce…")).strong()).clicked() {
                 let tracks = Self::pick_tracks();
                 if !tracks.is_empty() {
                     let prog = (0..128u8).find(|p| !self.project.songs.iter().any(|s| s.program == *p)).unwrap_or(0);
@@ -124,7 +126,7 @@ impl App {
                         .parent()
                         .and_then(|p| p.file_name())
                         .map(|s| s.to_string_lossy().to_string())
-                        .unwrap_or_else(|| format!("Brano {}", self.project.songs.len() + 1));
+                        .unwrap_or_else(|| crate::i18n::t(&format!("Brano {}", self.project.songs.len() + 1)));
                     let mut s = Song::new(&name, prog);
                     s.tracks = tracks;
                     self.project.songs.push(s);
@@ -133,13 +135,13 @@ impl App {
                     self.start_load(i, true);
                 }
             }
-            if ui.button("➕ Brano vuoto").clicked() {
+            if ui.button(ts("➕ Brano vuoto")).clicked() {
                 let prog = (0..128u8).find(|p| !self.project.songs.iter().any(|s| s.program == *p)).unwrap_or(0);
-                self.project.songs.push(Song::new(&format!("Brano {}", self.project.songs.len() + 1), prog));
+                self.project.songs.push(Song::new(&crate::i18n::t(&format!("Brano {}", self.project.songs.len() + 1)), prog));
                 let i = self.project.songs.len() - 1;
                 self.select_song(i);
             }
-            if !self.project.songs.is_empty() && ui.button("🗑 Elimina il brano selezionato").clicked() {
+            if !self.project.songs.is_empty() && ui.button(ts("🗑 Elimina il brano selezionato")).clicked() {
                 let i = self.song;
                 self.stop();
                 self.project.songs.remove(i);
@@ -158,7 +160,7 @@ impl App {
             let si = self.song;
             let Some(song) = self.project.songs.get_mut(si) else {
                 ui.centered_and_justified(|ui| {
-                    ui.label(RichText::new("Aggiungi un brano: scegli tutte le tracce separate (batteria, basso, chitarre, tastiere, voci, click…) della stessa canzone.").size(15.0));
+                    ui.label(RichText::new(ts("Aggiungi un brano: scegli tutte le tracce separate (batteria, basso, chitarre, tastiere, voci, click…) della stessa canzone.")).size(15.0));
                 });
                 return;
             };
@@ -167,19 +169,19 @@ impl App {
             let mut gen_rules = false;
             let mut gen_claude = false;
             ui.horizontal(|ui| {
-                ui.label("Titolo");
+                ui.label(ts("Titolo"));
                 ui.add(egui::TextEdit::singleline(&mut song.name).desired_width(240.0));
-                ui.label("Program Change");
+                ui.label(ts("Program Change"));
                 ui.add(egui::DragValue::new(&mut song.program).range(0..=127));
                 ui.separator();
-                if ui.button("➕ Aggiungi tracce…").clicked() {
+                if ui.button(ts("➕ Aggiungi tracce…")).clicked() {
                     add = true;
                 }
-                ui.label("Battiti per battuta");
+                ui.label(ts("Battiti per battuta"));
                 ui.add(egui::DragValue::new(&mut self.bpb_for_analysis).range(2..=12));
                 if ui
-                    .add_enabled(!busy && !song.tracks.is_empty(), egui::Button::new(RichText::new("🔍 Analizza il brano").strong()))
-                    .on_hover_text("Riconosce tempo, battute, parti (intro, strofa, ritornello…), intensità, colpi di batteria e stacchi")
+                    .add_enabled(!busy && !song.tracks.is_empty(), egui::Button::new(RichText::new(ts("🔍 Analizza il brano")).strong()))
+                    .on_hover_text(ts("Riconosce tempo, battute, parti (intro, strofa, ritornello…), intensità, colpi di batteria e stacchi"))
                     .clicked()
                 {
                     analyze = true;
@@ -189,21 +191,21 @@ impl App {
                 }
                 ui.separator();
                 let has = song.analysis.is_some();
-                if ui.add_enabled(has, egui::Button::new("✨ Genera lo show (regole)")).clicked() {
+                if ui.add_enabled(has, egui::Button::new(ts("✨ Genera lo show (regole)"))).clicked() {
                     gen_rules = true;
                 }
                 if ui
-                    .add_enabled(has, egui::Button::new("🤖 Genera con Claude Code"))
-                    .on_hover_text("Usa Claude Code installato sul computer per progettare lo show")
+                    .add_enabled(has, egui::Button::new(ts("🤖 Genera con Claude Code")))
+                    .on_hover_text(ts("Usa Claude Code installato sul computer per progettare lo show"))
                     .clicked()
                 {
                     gen_claude = true;
                 }
-                ui.label(RichText::new(format!("{} scene · {} colpi", song.cues.len(), song.hits.len())).color(Color32::GRAY));
+                ui.label(RichText::new(crate::i18n::t(&format!("{} scene · {} colpi", song.cues.len(), song.hits.len()))).color(Color32::GRAY));
             });
-            egui::CollapsingHeader::new(format!("Tracce ({})", song.tracks.len())).id_salt("tracks_box").default_open(song.analysis.is_none()).show(ui, |ui| {
+            egui::CollapsingHeader::new(t(&format!("Tracce ({})", song.tracks.len()))).id_salt("tracks_box").default_open(song.analysis.is_none()).show(ui, |ui| {
                 ui.label(
-                    RichText::new("Indica cosa suona ogni traccia: la batteria guida colpi e stacchi, il click (se c'è) dà il tempo esatto ed è escluso dall'ascolto. L'occhio mostra/nasconde la traccia negli editor.")
+                    RichText::new(ts("Indica cosa suona ogni traccia: la batteria guida colpi e stacchi, il click (se c'è) dà il tempo esatto ed è escluso dall'ascolto. L'occhio mostra/nasconde la traccia negli editor."))
                         .size(11.0)
                         .color(Color32::GRAY),
                 );
@@ -211,7 +213,7 @@ impl App {
                 egui::Grid::new("tracks").num_columns(5).striped(true).show(ui, |ui| {
                     for (i, t) in song.tracks.iter_mut().enumerate() {
                         let mut vis = !t.hidden;
-                        if ui.checkbox(&mut vis, "👁").on_hover_text("Mostra la traccia negli editor").changed() {
+                        if ui.checkbox(&mut vis, "👁").on_hover_text(ts("Mostra la traccia negli editor")).changed() {
                             t.hidden = !vis;
                         }
                         ui.label(RichText::new(&t.name).color(crate::lanes::role_color(t.role)));
@@ -222,7 +224,7 @@ impl App {
                         });
                         let p: String = if t.path.starts_with("demo:") { "(traccia sintetica della demo)".into() } else { t.path.clone() };
                         ui.label(RichText::new(p).size(10.5).color(Color32::GRAY));
-                        if ui.small_button("×").on_hover_text("Togli la traccia").clicked() {
+                        if ui.small_button("×").on_hover_text(ts("Togli la traccia")).clicked() {
                             remove = Some(i);
                         }
                         ui.end_row();
@@ -232,7 +234,7 @@ impl App {
                     song.tracks.remove(i);
                 }
                 ui.horizontal(|ui| {
-                    ui.label("Comando di Claude Code");
+                    ui.label(ts("Comando di Claude Code"));
                     ui.add(egui::TextEdit::singleline(&mut self.project.settings.claude_command).desired_width(200.0));
                 });
             });
@@ -240,7 +242,7 @@ impl App {
             if self.project.songs[si].analysis.is_some() {
                 self.analysis_editor(ui);
             } else {
-                ui.label("Il brano non è ancora stato analizzato: premi «Analizza il brano».");
+                ui.label(ts("Il brano non è ancora stato analizzato: premi «Analizza il brano»."));
             }
             if add {
                 let t = Self::pick_tracks();

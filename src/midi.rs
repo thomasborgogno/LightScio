@@ -101,7 +101,9 @@ pub fn export_song(song: &Song, settings: &Settings) -> (Vec<u8>, Vec<ExportEven
 
 pub fn note_name(n: u8) -> String {
     const NAMES: [&str; 12] = ["Do", "Do#", "Re", "Re#", "Mi", "Fa", "Fa#", "Sol", "Sol#", "La", "La#", "Si"];
-    format!("{}{}", NAMES[(n % 12) as usize], n as i32 / 12 - 1)
+    const NAMES_EN: [&str; 12] = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
+    let names = if crate::i18n::is_english() { NAMES_EN } else { NAMES };
+    format!("{}{}", names[(n % 12) as usize], n as i32 / 12 - 1)
 }
 
 // ---------------------------------------------------------------- input

@@ -1,0 +1,619 @@
+# LightSciò — English dictionary.  Format:  italiano ||| English
+# {} in the Italian text stands for a value; in English write {0}, {1}… (any order) or {} (same order).
+
+# ---------------- general / top bar
+Pronto ||| Ready
+Modifica annullata ||| Change undone
+Carico l'audio delle tracce, la riproduzione parte appena è pronto… ||| Loading the tracks' audio, playback starts as soon as it is ready…
+Carico l'audio del brano, parte tra un attimo… ||| Loading the song's audio, starting in a moment…
+Aggiungi prima le tracce audio del brano ||| Add the song's audio tracks first
+Analizza prima il brano ||| Analyse the song first
+Claude Code sta progettando lo show… ||| Claude Code is designing the show…
+Audio pronto per l'anteprima ||| Audio ready for preview
+Nuovo progetto: aggiungi i fari (scheda Fari e palco) e i brani (scheda Brani) ||| New project: add the lights (Lights & stage tab) and the songs (Songs tab)
+Progetto demo caricato ||| Demo project loaded
+Show luci ||| Light show
+File ||| File
+Nuovo progetto ||| New project
+Apri… ||| Open…
+Salva ||| Save
+Salva con nome… ||| Save as…
+Esporta traccia MIDI del brano… ||| Export the song's MIDI track…
+Esporta MIDI di tutti i brani… ||| Export MIDI of all songs…
+Adatta show esistente… ||| Adapt an existing show…
+Importa brani e show da un altro progetto adattandoli ai fari di questo ||| Import songs and show from another project, adapting them to this project's lights
+⚙ Preferenze… ||| ⚙ Preferences…
+⬆ Controlla aggiornamenti… ||| ⬆ Check for updates…
+Carica il progetto demo ||| Load the demo project
+🔦 Fari e palco ||| 🔦 Lights & stage
+🎵 Brani e analisi ||| 🎵 Songs & analysis
+💡 Show ||| 💡 Show
+🔴 Live ||| 🔴 Live
+Preferenze: dimensione di testi e pulsanti ||| Preferences: text and button size, language, updates
+DMX attivo ||| DMX on
+DMX in attesa ||| DMX waiting
+DMX spento ||| DMX off
+● MIDI in ascolto ||| ● MIDI listening
+● MIDI spento ||| ● MIDI off
+Show demo ||| Demo show
+Brano demo (sintetico) ||| Demo song (synthetic)
+⚙ Preferenze ||| ⚙ Preferences
+Dimensione testi ||| Text size
+Dimensione pulsanti ||| Button size
+Lingua ||| Language
+Automatica (sistema) ||| Automatic (system)
+Ripristina ||| Reset
+Le preferenze valgono per tutti i progetti. ||| Preferences apply to all projects.
+Audio: {} ||| Audio: {0}
+Analisi di «{}» ||| Analysing “{0}”
+Carico l'audio di «{}» ||| Loading audio of “{0}”
+Claude per «{}» ||| Claude for “{0}”
+Nessuna traccia audio leggibile (i file sono stati spostati o rinominati?): {} ||| No readable audio track (were the files moved or renamed?): {0}
+Alcune tracce non lette: {} ||| Some tracks could not be read: {0}
+Analisi completata: {} BPM, {} parti, {} stacchi/accenti — {} ||| Analysis complete: {0} BPM, {1} parts, {2} stops/accents — {3}
+Errore: {} ||| Error: {0}
+Claude ha creato lo show: {} scene. Puoi modificarlo nella scheda Show (Annulla per tornare indietro). ||| Claude created the show: {0} scenes. You can edit it in the Show tab (Undo to go back).
+Claude Code: {} ||| Claude Code: {0}
+Aperto {} ||| Opened {0}
+Salvato in {} ||| Saved to {0}
+Impossibile salvare: {} ||| Could not save: {0}
+Esportati {} file MIDI in {} ||| Exported {0} MIDI files to {1}
+Traccia MIDI salvata ({} eventi) in {} ||| MIDI track saved ({0} events) to {1}
+Impossibile salvare il MIDI: {} ||| Could not save the MIDI file: {0}
+Impossibile aprire {}: {} ||| Could not open {0}: {1}
+File non valido: {} ||| Invalid file: {0}
+
+# ---------------- show tab
+Nessun brano. Vai su «Brani e analisi» e carica le tracce MP3 di una canzone. ||| No songs. Go to “Songs & analysis” and load the MP3 stems of a song.
+Torna all'inizio ||| Back to start
+Play / pausa (barra spaziatrice) ||| Play / pause (space bar)
+Stop ||| Stop
+🔈 Carica audio per l'anteprima ||| 🔈 Load audio for preview
+anteprima senza audio ||| preview without audio
+💾 Esporta MIDI… ||| 💾 Export MIDI…
+Salva la traccia MIDI di controllo da caricare nel player delle basi ||| Save the MIDI control track to load in the backing-track player
+✨ Genera show ||| ✨ Generate show
+Con le regole automatiche ||| With the automatic rules
+Con Claude Code (installato sul PC) ||| With Claude Code (installed on this computer)
+↶ Annulla ||| ↶ Undo
+Show rigenerato con le regole automatiche (Annulla per tornare indietro) ||| Show regenerated with the automatic rules (Undo to go back)
+Zoom ↔ ||| Zoom ↔
+Zoom ↕ tracce ||| Zoom ↕ tracks
+Altezza delle tracce (anche Alt + rotellina sulla timeline) ||| Track height (also Alt + mouse wheel on the timeline)
+👁 Tracce ||| 👁 Tracks
+Cosa mostrare (vale per tutto il progetto) ||| What to show (for the whole project)
+Energia ||| Energy
+Mostra tutte ||| Show all
+Nascondi tutte ||| Hide all
+Per ridimensionare una corsia trascina la sua riga inferiore. ||| To resize a lane, drag its bottom line.
+Altezze predefinite ||| Default heights
+Aggancia ai battiti ||| Snap to beats
+Segui ||| Follow
+✚ Modifica colpi: ATTIVA ||| ✚ Edit hits: ON
+✚ Modifica colpi ||| ✚ Edit hits
+Quando è attiva: clic sulla corsia Colpi = nuovo colpo, trascina per spostare, tasto destro o Canc per eliminare ||| When on: click the Hits lane = new hit, drag to move, right click or Delete to remove
+Parti ||| Parts
+Scene (cue) ||| Scenes (cues)
+Colpi ✚ ||| Hits ✚
+Colpi ||| Hits
+Clic: posiziona la riproduzione · clic su una scena: selezionala · trascina l'inizio di una scena per spostarla · doppio clic: nuova scena · Colpi: attiva «Modifica colpi» per aggiungerli/spostarli · Ctrl+rotellina: zoom ↔ · Alt+rotellina: zoom ↕ ||| Click: set the playhead · click a scene: select it · drag the start of a scene to move it · double click: new scene · Hits: turn on “Edit hits” to add/move them · Ctrl+wheel: zoom ↔ · Alt+wheel: zoom ↕
+Scena ||| Scene
+Scena {} ||| Scene {0}
+Scena {}: {} ||| Scene {0}: {1}
+Come si usa ||| How it works
+• La riga «Parti» mostra strofe, ritornelli, stacchi… riconosciuti dall'analisi. Clicca una parte per modificarla, trascina il bordo per spostarla. ||| • The “Parts” row shows verses, choruses, breaks… found by the analysis. Click a part to edit it, drag its edge to move it.
+• Ogni «Scena» definisce colori, intensità, effetti e movimenti di ogni gruppo di fari fino alla scena successiva. Ogni scena diventa una nota MIDI. ||| • Each “Scene” sets colours, intensity, effects and movements of every group of lights until the next scene. Each scene becomes a MIDI note.
+• I «Colpi» sono accenti sopra la scena: accecatori, strobo, flash, blackout negli stacchi. ||| • “Hits” are accents on top of the scene: blinders, strobe, flashes, blackouts on stops.
+• Premi ▶ per l'anteprima con l'audio delle tracce. ||| • Press ▶ to preview with the tracks' audio.
+Parte del brano ||| Song part
+Nome ||| Name
+Tipo ||| Type
+Intensità ||| Intensity
+▶ Ascolta da qui ||| ▶ Listen from here
+✨ Rigenera le luci di questa parte ||| ✨ Regenerate the lights of this part
+Ricrea scene e colpi di questa parte secondo tipo e intensità ||| Recreate the scenes and hits of this part from its type and intensity
+Luci della parte rigenerate ||| Lights of the part regenerated
+Colpo ||| Hit
+Istante (s) ||| Time (s)
+Durata (s) ||| Duration (s)
+Gli accecatori sparano al massimo e poi si spengono rapidamente. ||| The blinders fire at full and then fade out quickly.
+Gli strobo (o i PAR, se non ci sono strobo) lampeggiano per la durata. ||| The strobes (or the PARs, if there are no strobes) flash for the duration.
+Tutti i fari fanno un flash bianco. ||| All lights flash white.
+Tutto spento per la durata: ideale per gli stacchi. ||| Everything dark for the duration: ideal for stops.
+🗑 Elimina colpo ||| 🗑 Delete hit
+Inizio (s) ||| Start (s)
+Dissolvenza (s) ||| Fade (s)
+Oltre la scena 119 non c'è nota MIDI dedicata ||| Scenes after 119 have no MIDI note of their own
+▶ Da qui ||| ▶ From here
+⧉ Duplica ||| ⧉ Duplicate
+⇐ Copia la precedente ||| ⇐ Copy the previous one
+Elimina scena ||| Delete scene
+Colori ||| Colours
+Clic: usa questo colore · Maiusc+clic: aggiungi ||| Click: use this colour · Shift+click: add it
+Effetto ||| Effect
+Velocità ||| Speed
+Movimento ||| Movement
+Ampiezza ||| Size
+Ciclo ||| Cycle
+⇋ Specchia sinistra / destra ||| ⇋ Mirror left / right
+Le teste a sinistra del palco fanno lo stesso movimento ma a specchio (es. cerchio verso sinistra mentre a destra va verso destra) ||| Heads on the left of the stage do the same movement mirrored (e.g. a circle to the left while the right side goes right)
+Inclinazione ||| Tilt
+Sfasamento ||| Phase spread
+Strobo ||| Strobe
+Mostra anche i gruppi senza fari ||| Also show groups without lights
+battuta {} ||| bar {0}
+{}  ·  battuta {} ||| {0}  ·  bar {1}
+{} parti, {} scene, {} colpi ||| {0} parts, {1} scenes, {2} hits
+Da {} (battuta {}) a {} — {} battute ||| From {0} (bar {1}) to {2} — {3} bars
+Nota MIDI: {} ({}) ||| MIDI note: {0} ({1})
+{}  ({} fari) — {}% ||| {0}  ({1} lights) — {2}%
+{} (copia) ||| {0} (copy)
+1/4 di battito ||| 1/4 beat
+1/2 battito ||| 1/2 beat
+1 battito ||| 1 beat
+2 battiti ||| 2 beats
+1 battuta ||| 1 bar
+2 battute ||| 2 bars
+4 battute ||| 4 bars
+8 battute ||| 8 bars
+
+# ---------------- lights & stage
+Faro ||| Light
+Catalogo fari ||| Fixture catalog
+🔍 Cerca marca o modello… ||| 🔍 Search brand or model…
+★ Preferiti ||| ★ Favourites
+Nel progetto ||| In this project
+Leggo la libreria QLC+… ||| Reading the QLC+ library…
+Libreria QLC+ non trovata: indica la cartella qui sotto. ||| QLC+ library not found: choose its folder below.
+Quanti ||| How many
+➕ Aggiungi al palco ||| ➕ Add to stage
+★ Togli dai preferiti ||| ★ Remove from favourites
+☆ Aggiungi ai preferiti ||| ☆ Add to favourites
+✏ Duplica e modifica ||| ✏ Duplicate and edit
+Togli il modello dal progetto (solo se non usato) ||| Remove the model from the project (only if unused)
+✏ Nuovo faro personalizzato… ||| ✏ New custom fixture…
+Il mio faro ||| My fixture
+Libreria QLC+ ||| QLC+ library
+Cartelle con i file .qxf (anche la cartella di QLC+ intera). ||| Folders with .qxf files (the whole QLC+ folder works too).
+📁 Aggiungi cartella… ||| 📁 Add folder…
+⟳ Rileggi ||| ⟳ Reload
+🗺 Pianta (trascina i fari) ||| 🗺 Plan (drag the lights)
+🎭 Vista dal pubblico ||| 🎭 Audience view
+Palco ||| Stage
+ m largo |||  m wide
+ m profondo |||  m deep
+Americane ||| Trusses
+ m fronte |||  m front
+ m fondo |||  m back
+Pianta vista dall'alto (in basso il pubblico). Ctrl/Maiusc+clic: aggiungi alla selezione · trascina sul vuoto: selezione a riquadro · trascina un faro: sposta tutti i selezionati. ||| Plan seen from above (audience at the bottom). Ctrl/Shift+click: add to selection · drag on empty space: box selection · drag a light: move all selected ones.
+Ripatch automatico ||| Auto patch
+Riassegna gli indirizzi DMX in sequenza, senza sovrapposizioni ||| Reassign DMX addresses in sequence, without overlaps
+Indirizzi DMX riassegnati ||| DMX addresses reassigned
+Tutti ||| All
+Nessuno ||| None
+Seleziona tutti i fari ||| Select all lights
+Ctrl+clic: aggiungi/togli · Maiusc+clic: intervallo ||| Ctrl+click: add/remove · Shift+click: range
+Seleziona un faro nella lista o sul palco. ||| Select a light in the list or on the stage.
+Modello ||| Model
+Gruppo ||| Group
+Indirizzo DMX ||| DMX address
+Posizione ||| Position
+x  ||| x
+ m |||  m
+prof.  ||| depth
+Altezza ||| Height
+Montaggio ||| Mounting
+a terra ||| on the floor
+appeso ||| hanging
+Pan di riposo ||| Home pan
+Rotazione ||| Rotation
+0° = dritto in verticale; positivo = verso il pubblico; negativo = verso il fondo ||| 0° = straight up/down; positive = towards the audience; negative = towards the back
+💡 Identifica ||| 💡 Identify
+Accende solo questo faro per 3 secondi (anche sull'uscita DMX) ||| Lights only this fixture for 3 seconds (also on the DMX output)
+🗑 Elimina ||| 🗑 Delete
+Ogni modifica qui sotto vale per tutti i fari selezionati. ||| Every change below applies to all selected lights.
+(misto) ||| (mixed)
+Profondità ||| Depth
+Pan / rotazione ||| Pan / rotation
+⇔ Allinea in riga ||| ⇔ Align in a row
+Stessa profondità e altezza del faro principale ||| Same depth and height as the main light
+↔ Distribuisci ||| ↔ Distribute
+Spaziatura uguale tra il più a sinistra e il più a destra ||| Even spacing between the leftmost and the rightmost
+⇋ Specchia ||| ⇋ Mirror
+Ribalta destra/sinistra rispetto al centro del palco ||| Flip left/right around the centre of the stage
+Indirizzi in sequenza ||| Sequential addresses
+Indirizzi DMX consecutivi a partire dal primo selezionato ||| Consecutive DMX addresses starting from the first selected
+Faro personalizzato ||| Custom fixture
+Nome modello ||| Model name
+Apertura fascio ||| Beam angle
+Escursione pan / tilt ||| Pan / tilt range
+Shutter aperto / chiuso ||| Shutter open / closed
+Strobo lento → veloce ||| Strobe slow → fast
+Canali DMX (nell'ordine del manuale del faro) ||| DMX channels (in the order of the fixture's manual)
+Valore di riposo / fisso ||| Rest / fixed value
++ Aggiungi canale ||| + Add channel
+Ruota colori: valore DMX → colore ||| Colour wheel: DMX value → colour
++ Colore ||| + Colour
+💾 Salva modello ||| 💾 Save model
+Annulla ||| Cancel
+Aggiunti {} × {} ||| Added {0} × {1}
+{} esce dall'universo DMX (1-512) ||| {0} goes outside the DMX universe (1-512)
+{} e {} si sovrappongono ||| {0} and {1} overlap
+Generici · {} ||| Generic · {0}
+Libreria QLC+: {} modelli. Scrivi nella ricerca per trovarli. ||| QLC+ library: {0} models. Type in the search box to find them.
+Libreria QLC+ · {} risultati ||| QLC+ library · {0} results
+…e altri {}: affina la ricerca ||| …and {0} more: refine the search
+Modo: {} ({} can.) ||| Mode: {0} ({1} ch.)
+{} ({} canali) ||| {0} ({1} channels)
+★ {} · {} can. ||| ★ {0} · {1} ch.
+{} · {} can. ||| {0} · {1} ch.
+Impossibile leggere il file: {} ||| Could not read the file: {0}
+{} (mio) ||| {0} (mine)
+Fari sul palco ({}) ||| Lights on stage ({0})
+canali: {}/512 ||| channels: {0}/512
+→ {} ({} canali) ||| → {0} ({1} channels)
+{} bis ||| {0} copy
+{} fari selezionati ||| {0} lights selected
+Canale {} ||| Channel {0}
+Modello «{}» salvato nel progetto ||| Model “{0}” saved in the project
+▼  PUBBLICO  ▼ ||| ▼  AUDIENCE  ▼
+americana\nfronte ||| front\ntruss
+americana\nfondo ||| back\ntruss
+fondale ||| backdrop
+XML non valido: {} ||| Invalid XML: {0}
+Nessun modo DMX nel file ||| No DMX mode in the file
+
+# ---------------- fixture catalog (generic profiles)
+PAR LED RGB 3 canali ||| LED PAR RGB 3 channels
+PAR LED RGB 7 canali ||| LED PAR RGB 7 channels
+PAR LED RGBW 8 canali ||| LED PAR RGBW 8 channels
+PAR LED RGBWA+UV 10 canali ||| LED PAR RGBWA+UV 10 channels
+Accecatore 2 celle (2 canali) ||| Blinder 2 cells (2 channels)
+Accecatore 4 celle (4 canali) ||| Blinder 4 cells (4 channels)
+Accecatore LED COB (1 canale) ||| LED COB blinder (1 channel)
+Strobo LED (2 canali) ||| LED strobe (2 channels)
+Barra LED RGB (4 canali) ||| LED bar RGB (4 channels)
+Canale dimmer generico (1 canale) ||| Generic dimmer channel (1 channel)
+Testa mobile Spot 9 canali ||| Moving head Spot 9 channels
+Testa mobile Spot 11 canali (16 bit) ||| Moving head Spot 11 channels (16 bit)
+Testa mobile Beam 16 canali ||| Moving head Beam 16 channels
+Testa mobile Wash RGBW 13 canali ||| Moving head Wash RGBW 13 channels
+Mini testa mobile Wash RGBW 9 canali ||| Mini moving head Wash RGBW 9 channels
+Modalità ||| Mode
+Velocità programmi ||| Program speed
+Velocità strobo ||| Strobe speed
+Velocità P/T ||| P/T speed
+Rotazione prisma ||| Prism rotation
+Colore ||| Colour
+Lampada ||| Lamp
+Cella 1 ||| Cell 1
+Cella 2 ||| Cell 2
+Cella 3 ||| Cell 3
+Cella 4 ||| Cell 4
+Strobo LED ||| LED strobe
+
+# ---------------- model labels
+Dimmer (intensità) ||| Dimmer (intensity)
+Rosso ||| Red
+Verde ||| Green
+Blu ||| Blue
+Bianco ||| White
+Ambra ||| Amber
+Pan fine ||| Pan fine
+Tilt fine ||| Tilt fine
+Velocità pan/tilt ||| Pan/tilt speed
+Shutter / strobo ||| Shutter / strobe
+Strobo (0 = spento) ||| Strobe (0 = off)
+Ruota colori ||| Colour wheel
+Prisma ||| Prism
+Fuoco ||| Focus
+Valore fisso ||| Fixed value
+Altro ||| Other
+PAR LED ||| LED PAR
+Accecatore (blinder) ||| Blinder
+Testa mobile Spot ||| Moving head Spot
+Testa mobile Beam ||| Moving head Beam
+Testa mobile Wash ||| Moving head Wash
+Barra LED ||| LED bar
+dimmer ||| dimmer
+colori RGB ||| RGB colours
+bianco ||| white
+ruota colori ||| colour wheel
+movimento pan/tilt ||| pan/tilt movement
+strobo ||| strobe
+prisma ||| prism
+Wash frontale ||| Front wash
+Controluce (PAR dietro) ||| Backlight (rear PARs)
+Accecatori ||| Blinders
+Teste mobili davanti ||| Front moving heads
+Teste mobili dietro ||| Rear moving heads
+Barre LED ||| LED bars
+Batteria ||| Drums
+Cassa ||| Kick
+Rullante ||| Snare
+Basso ||| Bass
+Chitarre ||| Guitars
+Tastiere / synth ||| Keys / synth
+Voci / cori ||| Vocals / choir
+Click / guida ||| Click / guide
+Altro strumento ||| Other instrument
+Ignora ||| Ignore
+Strofa ||| Verse
+Pre-ritornello ||| Pre-chorus
+Ritornello ||| Chorus
+Bridge / special ||| Bridge / special
+Assolo ||| Solo
+Stacco / break ||| Stop / break
+Finale ||| Outro
+Calmo ||| Calm
+Morbido ||| Soft
+Medio ||| Medium
+Energico ||| Energetic
+Esplosivo ||| Explosive
+Flash bianco totale ||| Full white flash
+Blackout (stacco) ||| Blackout (stop)
+Fisso ||| Static
+Pulsa a tempo ||| Pulse on the beat
+Segue la cassa ||| Follow the kick
+Segue il rullante ||| Follow the snare
+Rincorsa (chase) ||| Chase
+Alternato pari/dispari ||| Alternate odd/even
+Respiro lento ||| Slow breath
+Scintillio casuale ||| Random sparkle
+Giro di colori ||| Colour chase
+Spento ||| Off
+Fermo ||| Still
+Cerchio ||| Circle
+Otto ||| Figure eight
+Spazzata orizzontale ||| Horizontal sweep
+Spazzata verticale ||| Vertical sweep
+Ballyhoo (caotico) ||| Ballyhoo (chaotic)
+Sul pubblico ||| Over the audience
+Ventaglio ||| Fan
+Open DMX / FTDI (dongle economici) ||| Open DMX / FTDI (low-cost dongles)
+Compatibile Enttec DMX USB Pro ||| Enttec DMX USB Pro compatible
+Dance / elettronico (cassa dritta) ||| Dance / electronic (four on the floor)
+Rock / energico ||| Rock / energetic
+Ballad / tranquillo ||| Ballad / quiet
+Pop / groove medio ||| Pop / medium groove
+Strofa {} ||| Verse {0}
+Pre-ritornello {} ||| Pre-chorus {0}
+Ritornello {} ||| Chorus {0}
+Stacco / break {} ||| Stop / break {0}
+Bridge / special {} ||| Bridge / special {0}
+Assolo {} ||| Solo {0}
+
+# ---------------- generated scene names
+Salita verso {} ||| Build-up to {0}
+Rullata verso {} ||| Drum roll into {0}
+Buio finale ||| Final blackout
+{} · var {} ||| {0} · var {1}
+Brano {} ||| Song {0}
+Wash {} ||| Wash {0}
+Controluce {} ||| Backlight {0}
+Accecatore {} ||| Blinder {0}
+Barra LED {} ||| LED bar {0}
+Synth ||| Synth
+Pad ||| Pad
+Click ||| Click
+
+# ---------------- songs & analysis
+Parti aggiornate (Annulla nella scheda Show per tornare indietro). Rigenera lo show per adattare le luci. ||| Parts updated (Undo to go back). Regenerate the show to adapt the lights.
+Scegli le tracce separate del brano (MP3, WAV, FLAC, OGG) ||| Choose the song's separate tracks (MP3, WAV, FLAC, OGG)
+Audio ||| Audio
+Scaletta ||| Set list
+Il numero è il Program Change MIDI che seleziona il brano dal vivo. ||| The number is the MIDI Program Change that selects the song live.
+➕ Nuovo brano dalle tracce… ||| ➕ New song from tracks…
+➕ Brano vuoto ||| ➕ Empty song
+🗑 Elimina il brano selezionato ||| 🗑 Delete the selected song
+Aggiungi un brano: scegli tutte le tracce separate (batteria, basso, chitarre, tastiere, voci, click…) della stessa canzone. ||| Add a song: choose all the separate tracks (drums, bass, guitars, keys, vocals, click…) of the same song.
+Titolo ||| Title
+Program Change ||| Program Change
+➕ Aggiungi tracce… ||| ➕ Add tracks…
+Battiti per battuta ||| Beats per bar
+🔍 Analizza il brano ||| 🔍 Analyse the song
+Riconosce tempo, battute, parti (intro, strofa, ritornello…), intensità, colpi di batteria e stacchi ||| Detects tempo, bars, parts (intro, verse, chorus…), intensity, drum hits and stops
+✨ Genera lo show (regole) ||| ✨ Generate the show (rules)
+🤖 Genera con Claude Code ||| 🤖 Generate with Claude Code
+Usa Claude Code installato sul computer per progettare lo show ||| Uses Claude Code installed on this computer to design the show
+Indica cosa suona ogni traccia: la batteria guida colpi e stacchi, il click (se c'è) dà il tempo esatto ed è escluso dall'ascolto. L'occhio mostra/nasconde la traccia negli editor. ||| Set what each track plays: drums drive hits and stops, the click (if present) gives the exact tempo and is left out of the preview. The eye shows/hides the track in the editors.
+Mostra la traccia negli editor ||| Show the track in the editors
+Togli la traccia ||| Remove the track
+Comando di Claude Code ||| Claude Code command
+Il brano non è ancora stato analizzato: premi «Analizza il brano». ||| The song has not been analysed yet: press “Analyse the song”.
+(traccia sintetica della demo) ||| (synthetic demo track)
+Tracce ({}) ||| Tracks ({0})
+{} scene · {} colpi ||| {0} scenes · {1} hits
+Ascolta (barra spaziatrice) ||| Listen (space bar)
+Annulla l'ultima modifica (Ctrl+Z) ||| Undo the last change (Ctrl+Z)
+🥁 Click ||| 🥁 Click
+Aggiunge un click sui battiti all'ascolto: serve a verificare la griglia ||| Adds a click on the beats while listening, to check the grid
+Tempo ||| Tempo
+ BPM |||  BPM
+Primo battere ||| First downbeat
+ s |||  s
+Puoi anche trascinare la bandierina gialla sul righello ||| You can also drag the yellow flag on the ruler
+Battiti/battuta ||| Beats/bar
+＋ Nuovo battere qui ||| ＋ New downbeat here
+Fa ripartire le battute dal punto di ascolto (per battute più corte). Anche doppio clic sul righello. ||| Restarts the bars from the playhead (for shorter bars). Also double click on the ruler.
+Togli i battere aggiunti ||| Remove added downbeats
+⇤ Allinea le parti alle battute ||| ⇤ Align parts to bars
+Sposta ogni confine tra le parti sulla battuta più vicina ||| Moves every part boundary to the nearest bar
+▶ Ascolta la parte ||| ▶ Listen to the part
+⇥ Ascolta l'attacco ||| ⇥ Listen to the entry
+Da una battuta prima a una dopo l'inizio della parte ||| From one bar before to one bar after the start of the part
+⊕ Unisci alla successiva ||| ⊕ Merge with next
+✂ Dividi al punto di ascolto ||| ✂ Split at the playhead
+Elimina la parte (si unisce alla precedente) ||| Delete the part (it merges into the previous one)
+Clicca una parte per modificarla · trascina i bordi delle parti (si agganciano alle battute) · doppio clic su una parte: dividila · trascina la bandierina gialla per spostare il primo battere · doppio clic sul righello: nuovo battere · tasto destro su un battere aggiunto: toglilo ||| Click a part to edit it · drag part edges (they snap to bars) · double click a part: split it · drag the yellow flag to move the first downbeat · double click the ruler: new downbeat · right click an added downbeat: remove it
+(forme d'onda in caricamento…) ||| (loading waveforms…)
+Battute ||| Bars
+battute {}–{} ||| bars {0}–{1}
+Nuovo battere aggiunto: da qui le battute ripartono (tasto destro sulla bandierina per toglierlo) ||| New downbeat added: bars restart from here (right click the flag to remove it)
+Leggo {} ||| Reading {0}
+Analizzo {} ||| Analysing {0}
+Riconosco tempo, parti e stacchi… ||| Detecting tempo, parts and stops…
+Fatto ||| Done
+Nessuna traccia leggibile ||| No readable track
+{}: formato non riconosciuto ({}) ||| {0}: unknown format ({1})
+{}: nessuna traccia audio ||| {0}: no audio track
+{}: codec non supportato ({}) ||| {0}: unsupported codec ({1})
+{}: file vuoto o illeggibile ||| {0}: empty or unreadable file
+{} — {} ({}s) ||| {0} — {1} ({2}s)
+
+# ---------------- live
+Ingresso MIDI ||| MIDI input
+Collega qui l'uscita MIDI del player delle basi (interfaccia USB-MIDI o cavo virtuale). ||| Connect here the MIDI output of the backing-track player (USB-MIDI interface or virtual cable).
+nessuna porta ||| no port
+Aggiorna l'elenco ||| Refresh the list
+▶ Ascolta ||| ▶ Listen
+Canale MIDI ||| MIDI channel
+tutti ||| all
+Nella traccia MIDI: nota di stop a fine brano ||| In the MIDI track: stop note at the end of the song
+Cosa capisce l'app ||| What the app understands
+Program Change N → seleziona il brano N ||| Program Change N → selects song N
+MIDI Start / Continue / Stop / Song Position ||| MIDI Start / Continue / Stop / Song Position
+CC 7 → intensità generale ||| CC 7 → master intensity
+💾 Esporta MIDI del brano ||| 💾 Export the song's MIDI
+…di tutti ||| …all songs
+Prova senza player: ||| Test without the player:
+Nota 0 (parti) ||| Note 0 (start)
+Nota stop ||| Stop note
+Messaggi ricevuti ||| Messages received
+Nessun messaggio ancora ||| No messages yet
+Uscita DMX ||| DMX output
+Tipo interfaccia ||| Interface type
+Porta ||| Port
+nessuna ||| none
+Frequenza ||| Rate
+ Hz |||  Hz
+▶ Collega ||| ▶ Connect
+Scollega ||| Disconnect
+Nessuna porta seriale trovata: collega l'interfaccia USB-DMX e premi ⟳. Su Windows può servire il driver FTDI (VCP). ||| No serial port found: plug in the USB-DMX interface and press ⟳. On Windows the FTDI (VCP) driver may be needed.
+⬛ BLACKOUT ||| ⬛ BLACKOUT
+Test: tutti i canali al 100% ||| Test: all channels at 100%
+Intensità generale ||| Master intensity
+Monitor universo DMX (512 canali) ||| DMX universe monitor (512 channels)
+libero ||| free
+● IN ONDA ||| ● ON AIR
+■ FERMO ||| ■ STOPPED
+prima della prima scena ||| before the first scene
+Comandato dal MIDI esterno ||| Driven by external MIDI
+In attesa di MIDI: il player delle basi deve inviare Program Change e note della traccia esportata ||| Waiting for MIDI: the backing-track player must send the Program Change and notes of the exported track
+▶ Prova in locale ||| ▶ Test locally
+⏹ Stop ||| ⏹ Stop
+● in ascolto su {} ||| ● listening on {0}
+Note 0-{} → vai alla scena con quel numero e parti ||| Notes 0-{0} → jump to that scene and run
+Nota {} → show dall'inizio ||| Note {0} → show from the start
+Nota {} → stop · Nota {} → blackout on/off ||| Note {0} → stop · Note {1} → blackout on/off
+{} pacchetti inviati ||| {0} packets sent
+Canale {} = {}  ({}) ||| Channel {0} = {1}  ({2})
+Ultimo messaggio MIDI {} s fa ||| Last MIDI message {0} s ago
+Uscita DMX non collegata ||| DMX output not connected
+Collegato a {} ({}) ||| Connected to {0} ({1})
+Errore su {}: {} ||| Error on {0}: {1}
+MIDI Start → show dall'inizio ||| MIDI Start → show from the start
+MIDI Continue → riprende ||| MIDI Continue → resume
+MIDI Stop → pausa ||| MIDI Stop → pause
+Song Position → {}s ||| Song Position → {0}s
+Ignorato (canale {}, ascolto il {}) ||| Ignored (channel {0}, listening on {1})
+Program Change {} → brano «{}» ||| Program Change {0} → song “{1}”
+Program Change {}: nessun brano con questo numero ||| Program Change {0}: no song with this number
+Nota {}: nessun brano selezionato ||| Note {0}: no song selected
+Nota {} → «{}» dall'inizio ||| Note {0} → “{1}” from the start
+Nota {} → stop ||| Note {0} → stop
+Nota {} → blackout {} ||| Note {0} → blackout {1}
+Nota {} → scena «{}» ({}s) ||| Note {0} → scene “{1}” ({2}s)
+Nota {}: il brano non ha una scena {} ||| Note {0}: the song has no scene {1}
+Nota {}: non usata ||| Note {0}: not used
+Messaggio MIDI {} ||| MIDI message {0}
+MIDI non disponibile: {} ||| MIDI not available: {0}
+Porta «{}» non trovata ||| Port “{0}” not found
+In ascolto su «{}» ||| Listening on “{0}”
+Impossibile aprire «{}»: {} ||| Could not open “{0}”: {1}
+
+# ---------------- Claude
+Claude Code ha restituito un errore: {} ||| Claude Code returned an error: {0}
+Non trovo Claude Code sul computer ({}). Controlla il comando nelle Impostazioni. ||| Claude Code was not found on this computer ({0}). Check the command in the settings.
+La risposta di Claude non contiene uno show ||| Claude's answer does not contain a show
+Risposta di Claude non valida: {} ||| Invalid answer from Claude: {0}
+Claude non ha prodotto nessuna scena ||| Claude produced no scenes
+
+# ---------------- updates
+Controllo in corso… ||| Checking…
+Installo l'aggiornamento: LightSciò si riapre da solo al termine. ||| Installing the update: LightSciò reopens by itself when done.
+Si è aperta l'immagine disco: trascina LightSciò nella cartella Applicazioni, sostituendo la versione vecchia, poi riapri l'app. ||| The disk image is open: drag LightSciò into Applications, replacing the old version, then reopen the app.
+Scarica e installa ||| Download and install
+Scarica ||| Download
+Apri la pagina di download ||| Open the download page
+Novità ||| What's new
+Più tardi ||| Later
+Salta questa versione ||| Skip this version
+(nessuna nota di rilascio) ||| (no release notes)
+Pagina della versione ||| Release page
+Aggiornamenti ||| Updates
+Controlla automaticamente all'avvio ||| Check automatically at start-up
+Progetto GitHub ||| GitHub project
+Controlla ora ||| Check now
+Mostra l'aggiornamento disponibile ||| Show the available update
+È disponibile la versione {} ||| Version {0} is available
+Hai già l'ultima versione ({}). ||| You already have the latest version ({0}).
+Controllo aggiornamenti non riuscito: {} ||| Update check failed: {0}
+Scaricato in {} ||| Downloaded to {0}
+Aggiornamento non riuscito: {} ||| Update failed: {0}
+⬆ È disponibile LightSciò {} (tu hai la {}) ||| ⬆ LightSciò {0} is available (you have {1})
+Scarico… {}% ||| Downloading… {0}%
+Versione installata: {} ||| Installed version: {0}
+indirizzo del progetto non valido (serve utente/repository) ||| invalid project address (owner/repository needed)
+risposta non valida: {} ||| invalid answer: {0}
+nessuna versione pubblicata (ancora) ||| no version published (yet)
+il server ha risposto {} ||| the server answered {0}
+connessione non riuscita ({}; {}) ||| connection failed ({0}; {1})
+connessione non riuscita ({}) ||| connection failed ({0})
+curl non disponibile: {} ||| curl not available: {0}
+download non riuscito ||| download failed
+download non riuscito: {} ||| download failed: {0}
+nessun installer per questo sistema in questa versione ||| no installer for this system in this version
+download interrotto: {} ||| download interrupted: {0}
+file scaricato non valido ||| invalid downloaded file
+impossibile avviare l'installer: {} ||| could not start the installer: {0}
+installa a mano il file scaricato: {} ||| install the downloaded file by hand: {0}
+
+# ---------------- adapt existing show
+Adatta show esistente ||| Adapt an existing show
+Importa i brani e lo show di un altro progetto adattandoli ai fari di questo progetto: brani, parti, scene e colpi restano uguali, gli effetti di ogni gruppo di fari vengono trasferiti ai gruppi di questo setup. ||| Import the songs and the show of another project, adapting them to this project's lights: songs, parts, scenes and hits stay the same, the effects of each group of lights are moved to the groups of this setup.
+Il file da cui importi non viene modificato. ||| The file you import from is not modified.
+Questo progetto non ha ancora fari: aggiungili prima in «Fari e palco». ||| This project has no lights yet: add them first in “Lights & stage”.
+1. Scegli lo show da adattare ||| 1. Choose the show to adapt
+📂 Apri show… ||| 📂 Open show…
+«{}»: {} brani, {} fari ||| “{0}”: {1} songs, {2} lights
+2. Brani da importare ||| 2. Songs to import
+scene ||| scenes
+già presente ||| already present
+Sostituisci i brani con lo stesso nome ||| Replace songs with the same name
+3. Da quale gruppo dello show prende gli effetti ogni gruppo di questo progetto ||| 3. Which group of the show each group of this project takes its effects from
+Gruppo di questo progetto ||| Group in this project
+Fari ||| Lights
+Prende colori, intensità, effetti e movimenti da ||| Takes colours, intensity, effects and movements from
+— spento — ||| — off —
+I colpi (accecatori, strobo, flash, blackout) restano uguali e usano i gruppi Accecatori/Strobo di questo progetto (o i PAR se mancano). ||| Hits (blinders, strobe, flashes, blackouts) stay the same and use this project's Blinders/Strobe groups (or the PARs if missing).
+Importa {} brani nel progetto ||| Import {0} songs into the project
+Importati {} brani adattati a questo setup luci. Ricordati di salvare il progetto. ||| Imported {0} songs adapted to this lighting setup. Remember to save the project.
+
+{} - luci.mid ||| {0} - lights.mid
+
+# ---------------- lighting setup export / import
+Esporta setup luci… ||| Export lighting setup…
+Salva palco e fari in un file, per riusarli in altri progetti ||| Save stage and lights to a file, to reuse them in other projects
+Importa setup luci… ||| Import lighting setup…
+Carica palco e fari da un file di setup o da un altro show ||| Load stage and lights from a setup file or from another show
+Setup luci ||| Lighting setup
+Setup luci o show ||| Lighting setup or show
+Setup luci salvato in {} ||| Lighting setup saved to {0}
+Impossibile salvare il setup: {} ||| Could not save the setup: {0}
+Importati {} fari dal setup «{}» ||| Imported {0} lights from the setup “{1}”
+Importa setup luci ||| Import lighting setup
+Il setup «{}» contiene {} fari. Questo progetto ne ha già {}. ||| The setup “{0}” has {1} lights. This project already has {2}.
+Sostituisci i fari attuali ||| Replace the current lights
+Aggiungi a quelli attuali ||| Add to the current ones
+Sostituendo, anche le misure del palco vengono prese dal setup. ||| When replacing, the stage size is taken from the setup too.

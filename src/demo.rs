@@ -304,7 +304,7 @@ pub fn demo_tracks() -> Vec<TrackInfo> {
         ("click", "Click", TrackRole::Click),
     ]
     .iter()
-    .map(|(id, name, role)| TrackInfo { path: format!("demo:{id}"), name: name.to_string(), role: *role, env: vec![], hidden: false })
+    .map(|(id, name, role)| TrackInfo { path: format!("demo:{id}"), name: crate::i18n::t(name), role: *role, env: vec![], hidden: false })
     .collect()
 }
 
@@ -338,16 +338,16 @@ pub fn demo_rig(p: &mut Project) {
     for i in 0..4 {
         let x = -3.0 + i as f32 * 2.0;
         let a = next(7);
-        inst(p, "par-rgb-7", &format!("Wash {}", i + 1), x, 0.4, st.truss_front, true, Group::FrontWash, -35.0, a);
+        inst(p, "par-rgb-7", &crate::i18n::t(&format!("Wash {}", i + 1)), x, 0.4, st.truss_front, true, Group::FrontWash, -35.0, a);
     }
     for i in 0..6 {
         let x = -4.0 + i as f32 * 1.6;
         let a = next(8);
-        inst(p, "par-rgbw-8", &format!("Controluce {}", i + 1), x, st.depth - 0.4, st.truss_back, true, Group::BackWash, 20.0, a);
+        inst(p, "par-rgbw-8", &crate::i18n::t(&format!("Controluce {}", i + 1)), x, st.depth - 0.4, st.truss_back, true, Group::BackWash, 20.0, a);
     }
     for (i, x) in [-2.5f32, 2.5].iter().enumerate() {
         let a = next(4);
-        inst(p, "blinder-4", &format!("Accecatore {}", i + 1), *x, st.depth - 0.3, 0.4, false, Group::Blinders, 75.0, a);
+        inst(p, "blinder-4", &crate::i18n::t(&format!("Accecatore {}", i + 1)), *x, st.depth - 0.3, 0.4, false, Group::Blinders, 75.0, a);
     }
     for (i, x) in [-3.5f32, 3.5].iter().enumerate() {
         let a = next(11);
@@ -358,9 +358,9 @@ pub fn demo_rig(p: &mut Project) {
         inst(p, "head-beam-16", &format!("Beam {}", i + 1), *x, st.depth - 0.6, st.truss_back, true, Group::HeadsBack, 0.0, a);
     }
     let a = next(2);
-    inst(p, "strobe-2", "Strobo", 0.0, st.depth - 0.4, st.truss_back, true, Group::Strobes, 30.0, a);
+    inst(p, "strobe-2", crate::i18n::ts("Strobo"), 0.0, st.depth - 0.4, st.truss_back, true, Group::Strobes, 30.0, a);
     for (i, x) in [-1.0f32, 1.0].iter().enumerate() {
         let a = next(4);
-        inst(p, "bar-rgb-4", &format!("Barra LED {}", i + 1), *x, st.depth - 0.2, 0.1, false, Group::Bars, 80.0, a);
+        inst(p, "bar-rgb-4", &crate::i18n::t(&format!("Barra LED {}", i + 1)), *x, st.depth - 0.2, 0.1, false, Group::Bars, 80.0, a);
     }
 }

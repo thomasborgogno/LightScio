@@ -22,7 +22,7 @@ fn wheel() -> Vec<ColorSlot> {
 fn def(id: &str, name: &str, kind: FixtureKind, channels: Vec<ChannelDef>, beam: f32) -> FixtureDef {
     FixtureDef {
         id: id.to_string(),
-        name: name.to_string(),
+        name: crate::i18n::t(name),
         kind,
         channels,
         pan_range: 540.0,

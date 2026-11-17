@@ -2,6 +2,8 @@
 //! banner when a new version exists, download + install.
 
 use crate::app::*;
+#[allow(unused_imports)]
+use crate::i18n::{t, ts};
 use crate::update::{self, ReleaseInfo};
 use egui::{Color32, RichText};
 use std::sync::mpsc::{self, Receiver};
@@ -36,7 +38,7 @@ impl App {
         self.update.rx = Some(rx);
         self.update.manual = manual;
         if manual {
-            self.update.message = "Controllo in corso…".into();
+            self.update.message = ts("Controllo in corso…").into();
         }
         self.prefs.last_update_check = now_secs();
     }
@@ -55,15 +57,15 @@ impl App {
                 match r {
                     Ok(Some(info)) => {
                         let skipped = !self.update.manual && self.prefs.skip_version == info.version;
-                        self.update.message = format!("È disponibile la versione {}", info.version);
+                        self.update.message = crate::i18n::t(&format!("È disponibile la versione {}", info.version));
                         if !skipped {
                             self.update.dismissed = false;
                             self.update.available = Some(info);
                         }
                     }
-                    Ok(None) => self.update.message = format!("Hai già l'ultima versione ({}).", update::current_version()),
+                    Ok(None) => self.update.message = crate::i18n::t(&format!("Hai già l'ultima versione ({}).", update::current_version())),
                     Err(e) => {
-                        self.update.message = format!("Controllo aggiornamenti non riuscito: {e}");
+                        self.update.message = crate::i18n::t(&format!("Controllo aggiornamenti non riuscito: {e}"));
                         if self.update.manual {
                             self.status = self.update.message.clone();
                         }
@@ -78,21 +80,21 @@ impl App {
                 match r.and_then(|p| update::launch_installer(&p).map(|_| p)) {
                     Ok(p) => {
                         if cfg!(target_os = "windows") {
-                            self.status = "Installo l'aggiornamento: LightSciò si riapre da solo al termine.".into();
+                            self.status = ts("Installo l'aggiornamento: LightSciò si riapre da solo al termine.").into();
                             // save the project first, then close so the installer can replace the program
                             if self.path.is_some() {
                                 self.save(false);
                             }
                             ctx.send_viewport_cmd(egui::ViewportCommand::Close);
                         } else if cfg!(target_os = "macos") {
-                            self.update.message = "Si è aperta l'immagine disco: trascina LightSciò nella cartella Applicazioni, sostituendo la versione vecchia, poi riapri l'app.".into();
+                            self.update.message = ts("Si è aperta l'immagine disco: trascina LightSciò nella cartella Applicazioni, sostituendo la versione vecchia, poi riapri l'app.").into();
                             self.status = self.update.message.clone();
                         } else {
-                            self.update.message = format!("Scaricato in {}", p.display());
+                            self.update.message = crate::i18n::t(&format!("Scaricato in {}", p.display()));
                         }
                     }
                     Err(e) => {
-                        self.update.message = format!("Aggiornamento non riuscito: {e}");
+                        self.update.message = crate::i18n::t(&format!("Aggiornamento non riuscito: {e}"));
                         self.status = self.update.message.clone();
                     }
                 }
@@ -119,7 +121,7 @@ impl App {
 
     fn open_release_page(&mut self) {
         if let Some(info) = &self.update.available {
-            let url = if info.page.is_empty() { format!("https://github.com/{}/releases/latest", update::normalize_repo(&self.prefs.update_repo)) } else { info.page.clone() };
+            let url = if info.page.is_empty() { crate::i18n::t(&format!("https://github.com/{}/releases/latest", update::normalize_repo(&self.prefs.update_repo))) } else { info.page.clone() };
             self.open_url = Some(url);
         }
     }
@@ -135,30 +137,30 @@ impl App {
         }
         egui::TopBottomPanel::top("update_banner").frame(egui::Frame::new().fill(Color32::from_rgb(52, 40, 12)).inner_margin(egui::Margin::symmetric(10, 6))).show(ctx, |ui| {
             ui.horizontal_wrapped(|ui| {
-                ui.label(RichText::new(format!("⬆ È disponibile LightSciò {} (tu hai la {})", info.version, update::current_version())).strong().color(Color32::from_rgb(255, 210, 110)));
+                ui.label(RichText::new(crate::i18n::t(&format!("⬆ È disponibile LightSciò {} (tu hai la {})", info.version, update::current_version()))).strong().color(Color32::from_rgb(255, 210, 110)));
                 if let Some(p) = &self.update.dl_progress {
                     let v = p.lock().map(|x| *x).unwrap_or(0.0);
-                    ui.add(egui::ProgressBar::new(v).desired_width(220.0).text(format!("Scarico… {:.0}%", v * 100.0)));
+                    ui.add(egui::ProgressBar::new(v).desired_width(220.0).text(crate::i18n::t(&format!("Scarico… {:.0}%", v * 100.0))));
                 } else {
                     let label = if info.asset_url.is_some() {
                         if cfg!(target_os = "windows") {
-                            "Scarica e installa"
+                            ts("Scarica e installa")
                         } else {
-                            "Scarica"
+                            ts("Scarica")
                         }
                     } else {
-                        "Apri la pagina di download"
+                        ts("Apri la pagina di download")
                     };
                     if ui.button(RichText::new(label).strong()).clicked() {
                         self.start_download();
                     }
-                    if ui.button("Novità").clicked() {
+                    if ui.button(ts("Novità")).clicked() {
                         self.update.show_notes = !self.update.show_notes;
                     }
-                    if ui.button("Più tardi").clicked() {
+                    if ui.button(ts("Più tardi")).clicked() {
                         self.update.dismissed = true;
                     }
-                    if ui.button("Salta questa versione").clicked() {
+                    if ui.button(ts("Salta questa versione")).clicked() {
                         self.prefs.skip_version = info.version.clone();
                         self.update.dismissed = true;
                     }
@@ -166,8 +168,8 @@ impl App {
             });
             if self.update.show_notes {
                 egui::ScrollArea::vertical().max_height(160.0).show(ui, |ui| {
-                    ui.label(if info.notes.trim().is_empty() { "(nessuna nota di rilascio)" } else { info.notes.as_str() });
-                    if ui.link("Pagina della versione").clicked() {
+                    ui.label(if info.notes.trim().is_empty() { ts("(nessuna nota di rilascio)") } else { info.notes.as_str() });
+                    if ui.link(ts("Pagina della versione")).clicked() {
                         self.open_release_page();
                     }
                 });
@@ -178,16 +180,16 @@ impl App {
     /// Update section of the Preferences window.
     pub fn ui_update_prefs(&mut self, ui: &mut egui::Ui) {
         ui.separator();
-        ui.label(RichText::new("Aggiornamenti").strong());
-        ui.label(format!("Versione installata: {}", update::current_version()));
-        ui.checkbox(&mut self.prefs.check_updates, "Controlla automaticamente all'avvio");
+        ui.label(RichText::new(ts("Aggiornamenti")).strong());
+        ui.label(crate::i18n::t(&format!("Versione installata: {}", update::current_version())));
+        ui.checkbox(&mut self.prefs.check_updates, ts("Controlla automaticamente all'avvio"));
         ui.horizontal(|ui| {
-            ui.label("Progetto GitHub");
+            ui.label(ts("Progetto GitHub"));
             ui.add(egui::TextEdit::singleline(&mut self.prefs.update_repo).desired_width(220.0).hint_text(update::DEFAULT_REPO));
         });
         ui.horizontal(|ui| {
             let busy = self.update.rx.is_some();
-            if ui.add_enabled(!busy, egui::Button::new("Controlla ora")).clicked() {
+            if ui.add_enabled(!busy, egui::Button::new(ts("Controlla ora"))).clicked() {
                 self.update.dismissed = false;
                 self.start_update_check(true);
             }
@@ -196,9 +198,9 @@ impl App {
             }
         });
         if !self.update.message.is_empty() {
-            ui.label(RichText::new(&self.update.message).size(11.5).color(Color32::from_rgb(190, 190, 205)));
+            ui.label(RichText::new(t(&self.update.message)).size(11.5).color(Color32::from_rgb(190, 190, 205)));
         }
-        if self.update.available.is_some() && self.update.dismissed && ui.button("Mostra l'aggiornamento disponibile").clicked() {
+        if self.update.available.is_some() && self.update.dismissed && ui.button(ts("Mostra l'aggiornamento disponibile")).clicked() {
             self.update.dismissed = false;
         }
     }

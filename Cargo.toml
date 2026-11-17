@@ -22,8 +22,13 @@ midir = "0.10"
 serialport = { version = "4", default-features = false }
 rfd = "0.15"
 roxmltree = "0.20"
+sys-locale = "0.3"
 ureq = { version = "2", default-features = false, features = ["tls", "json"] }
 image = { version = "0.25", default-features = false, features = ["png"] }
+
+# macOS only: start the screenshot check without stealing focus
+[target.'cfg(target_os = "macos")'.dependencies]
+winit = "0.30"
 
 [profile.dev]
 opt-level = 1

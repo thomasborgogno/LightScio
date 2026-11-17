@@ -1,6 +1,8 @@
 //! "Show" tab: transport, stage preview, timeline editor and inspector.
 
 use crate::app::*;
+#[allow(unused_imports)]
+use crate::i18n::{t, ts};
 use crate::autoshow;
 use crate::lanes::{self, role_color, Lane};
 use crate::model::*;
@@ -52,11 +54,11 @@ enum Act {
     View(f64, f32),
 }
 
-fn rate_combo(ui: &mut egui::Ui, id: impl std::hash::Hash, v: &mut f32, opts: &[(f32, &str)]) {
+fn rate_combo(ui: &mut egui::Ui, id: impl std::hash::Hash, v: &mut f32, opts: &[(f32, &'static str)]) {
     let cur = opts.iter().min_by(|a, b| (a.0 - *v).abs().total_cmp(&(b.0 - *v).abs())).map(|x| x.1).unwrap_or("");
-    egui::ComboBox::from_id_salt(id).selected_text(cur).width(110.0).show_ui(ui, |ui| {
+    egui::ComboBox::from_id_salt(id).selected_text(ts(cur)).width(110.0).show_ui(ui, |ui| {
         for (r, l) in opts {
-            ui.selectable_value(v, *r, *l);
+            ui.selectable_value(v, *r, ts(l));
         }
     });
 }
@@ -70,7 +72,7 @@ impl App {
         egui::CentralPanel::default().show(ctx, |ui| {
             if self.project.songs.is_empty() {
                 ui.centered_and_justified(|ui| {
-                    ui.label(RichText::new("Nessun brano. Vai su «Brani e analisi» e carica le tracce MP3 di una canzone.").size(16.0));
+                    ui.label(RichText::new(ts("Nessun brano. Vai su «Brani e analisi» e carica le tracce MP3 di una canzone.")).size(16.0));
                 });
                 return;
             }
@@ -166,19 +168,19 @@ impl App {
             }
             ui.separator();
             let big = |s: &str| RichText::new(s).size(18.0);
-            if ui.button(big("⏮")).on_hover_text("Torna all'inizio").clicked() {
+            if ui.button(big("⏮")).on_hover_text(ts("Torna all'inizio")).clicked() {
                 self.seek(0.0);
                 self.tl.start = 0.0;
             }
             let playing = self.is_playing();
-            if ui.button(big(if playing { "⏸" } else { "▶" })).on_hover_text("Play / pausa (barra spaziatrice)").clicked() {
+            if ui.button(big(if playing { "⏸" } else { "▶" })).on_hover_text(ts("Play / pausa (barra spaziatrice)")).clicked() {
                 if playing {
                     self.pause()
                 } else {
                     self.play()
                 }
             }
-            if ui.button(big("⏹")).on_hover_text("Stop").clicked() {
+            if ui.button(big("⏹")).on_hover_text(ts("Stop")).clicked() {
                 self.stop();
             }
             let t = self.now();
@@ -191,8 +193,8 @@ impl App {
                 None => (String::new(), 0.0, String::new()),
             };
             ui.label(RichText::new(fmt_time(t)).monospace().size(20.0).color(Color32::from_rgb(255, 210, 90)));
-            ui.label(RichText::new(format!("battuta {bb}")).monospace());
-            ui.label(RichText::new(format!("{bpm:.1} BPM")).monospace().color(Color32::GRAY));
+            ui.label(RichText::new(crate::i18n::t(&format!("battuta {bb}"))).monospace());
+            ui.label(RichText::new(crate::i18n::t(&format!("{bpm:.1} BPM"))).monospace().color(Color32::GRAY));
             if !sec.is_empty() {
                 ui.label(RichText::new(sec).strong());
             }
@@ -206,28 +208,28 @@ impl App {
             } else if self.cur_song().map(|s| !s.tracks.is_empty()).unwrap_or(false) {
                 if self.job_running("Carico") || self.job_running("Analisi") {
                     ui.spinner();
-                } else if ui.button("🔈 Carica audio per l'anteprima").clicked() {
+                } else if ui.button(ts("🔈 Carica audio per l'anteprima")).clicked() {
                     self.start_load(self.song, false);
                 }
             } else {
-                ui.label(RichText::new("anteprima senza audio").color(Color32::GRAY));
+                ui.label(RichText::new(ts("anteprima senza audio")).color(Color32::GRAY));
             }
             ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                if ui.button("💾 Esporta MIDI…").on_hover_text("Salva la traccia MIDI di controllo da caricare nel player delle basi").clicked() {
+                if ui.button(ts("💾 Esporta MIDI…")).on_hover_text(ts("Salva la traccia MIDI di controllo da caricare nel player delle basi")).clicked() {
                     self.export_midi(false);
                 }
-                ui.menu_button("✨ Genera show", |ui| {
-                    if ui.button("Con le regole automatiche").clicked() {
+                ui.menu_button(ts("✨ Genera show"), |ui| {
+                    if ui.button(ts("Con le regole automatiche")).clicked() {
                         self.regenerate_rules();
                         ui.close_menu();
                     }
                     let busy = self.job_running("Claude");
-                    if ui.add_enabled(!busy, egui::Button::new("Con Claude Code (installato sul PC)")).clicked() {
+                    if ui.add_enabled(!busy, egui::Button::new(ts("Con Claude Code (installato sul PC)"))).clicked() {
                         self.start_claude(self.song);
                         ui.close_menu();
                     }
                 });
-                if ui.add_enabled(!self.undo.is_empty(), egui::Button::new("↶ Annulla")).clicked() {
+                if ui.add_enabled(!self.undo.is_empty(), egui::Button::new(ts("↶ Annulla"))).clicked() {
                     self.do_undo();
                 }
             });
@@ -237,7 +239,7 @@ impl App {
 
     pub fn regenerate_rules(&mut self) {
         if self.cur_song().and_then(|s| s.analysis.as_ref()).is_none() {
-            self.status = "Analizza prima il brano".into();
+            self.status = ts("Analizza prima il brano").into();
             return;
         }
         self.push_undo();
@@ -247,20 +249,20 @@ impl App {
             s.hits = h;
         }
         self.sel = Sel::None;
-        self.status = "Show rigenerato con le regole automatiche (Annulla per tornare indietro)".into();
+        self.status = ts("Show rigenerato con le regole automatiche (Annulla per tornare indietro)").into();
     }
 
     fn timeline_controls(&mut self, ui: &mut egui::Ui) {
         ui.horizontal(|ui| {
-            ui.label("Zoom ↔");
+            ui.label(ts("Zoom ↔"));
             ui.add(egui::Slider::new(&mut self.tl.pps, 3.0..=250.0).logarithmic(true).show_value(false));
-            ui.label("Zoom ↕ tracce");
+            ui.label(ts("Zoom ↕ tracce"));
             ui.add(egui::Slider::new(&mut self.project.view.track_h, 8.0..=160.0).show_value(false))
-                .on_hover_text("Altezza delle tracce (anche Alt + rotellina sulla timeline)");
+                .on_hover_text(ts("Altezza delle tracce (anche Alt + rotellina sulla timeline)"));
             let si = self.song;
-            ui.menu_button("👁 Tracce", |ui| {
-                ui.label(RichText::new("Cosa mostrare (vale per tutto il progetto)").strong());
-                ui.checkbox(&mut self.project.view.show_energy, "Energia");
+            ui.menu_button(ts("👁 Tracce"), |ui| {
+                ui.label(RichText::new(ts("Cosa mostrare (vale per tutto il progetto)")).strong());
+                ui.checkbox(&mut self.project.view.show_energy, ts("Energia"));
                 if let Some(s) = self.project.songs.get_mut(si) {
                     for t in s.tracks.iter_mut() {
                         let mut vis = !t.hidden;
@@ -270,29 +272,29 @@ impl App {
                     }
                     ui.separator();
                     ui.horizontal(|ui| {
-                        if ui.button("Mostra tutte").clicked() {
+                        if ui.button(ts("Mostra tutte")).clicked() {
                             s.tracks.iter_mut().for_each(|t| t.hidden = false);
                         }
-                        if ui.button("Nascondi tutte").clicked() {
+                        if ui.button(ts("Nascondi tutte")).clicked() {
                             s.tracks.iter_mut().for_each(|t| t.hidden = true);
                         }
                     });
                 }
                 ui.separator();
-                ui.label(RichText::new("Per ridimensionare una corsia trascina la sua riga inferiore.").size(11.0).color(Color32::GRAY));
-                if ui.button("Altezze predefinite").clicked() {
+                ui.label(RichText::new(ts("Per ridimensionare una corsia trascina la sua riga inferiore.")).size(11.0).color(Color32::GRAY));
+                if ui.button(ts("Altezze predefinite")).clicked() {
                     let keep = (self.project.view.show_energy, self.project.view.stage_frac);
                     self.project.view = ViewSettings::default();
                     self.project.view.show_energy = keep.0;
                     self.project.view.stage_frac = keep.1;
                 }
             });
-            ui.checkbox(&mut self.tl.snap, "Aggancia ai battiti");
-            ui.checkbox(&mut self.tl.follow, "Segui");
+            ui.checkbox(&mut self.tl.snap, ts("Aggancia ai battiti"));
+            ui.checkbox(&mut self.tl.follow, ts("Segui"));
             ui.separator();
-            let txt = if self.tl.hit_mode { RichText::new("✚ Modifica colpi: ATTIVA").strong().color(Color32::from_rgb(255, 200, 90)) } else { RichText::new("✚ Modifica colpi") };
+            let txt = if self.tl.hit_mode { RichText::new(ts("✚ Modifica colpi: ATTIVA")).strong().color(Color32::from_rgb(255, 200, 90)) } else { RichText::new(ts("✚ Modifica colpi")) };
             ui.toggle_value(&mut self.tl.hit_mode, txt)
-                .on_hover_text("Quando è attiva: clic sulla corsia Colpi = nuovo colpo, trascina per spostare, tasto destro o Canc per eliminare");
+                .on_hover_text(ts("Quando è attiva: clic sulla corsia Colpi = nuovo colpo, trascina per spostare, tasto destro o Canc per eliminare"));
             ui.add_enabled_ui(self.tl.hit_mode, |ui| {
                 egui::ComboBox::from_id_salt("hit_kind").selected_text(self.tl.add_hit.label()).show_ui(ui, |ui| {
                     for k in HitKind::ALL {
@@ -355,17 +357,17 @@ impl App {
             painter.text(pos2(rect.left() + 6.0, y + h / 2.0), egui::Align2::LEFT_CENTER, txt, egui::FontId::proportional((h * 0.45).clamp(9.5, 13.0)), col);
         };
         let gray = Color32::from_rgb(150, 150, 165);
-        lane_label(y_sec, h_sec, "Parti", gray);
+        lane_label(y_sec, h_sec, ts("Parti"), gray);
         if h_en > 0.0 {
-            lane_label(y_en, h_en, "Energia", gray);
+            lane_label(y_en, h_en, ts("Energia"), gray);
         }
         for (row, &ti) in visible.iter().enumerate() {
             let t = &song.tracks[ti];
             let name: String = t.name.chars().take(14).collect();
             lane_label(y_tr + h_tr * row as f32, h_tr, &name, role_color(t.role));
         }
-        lane_label(y_cue, h_cue, "Scene (cue)", gray);
-        lane_label(y_hit, h_hit, if self.tl.hit_mode { "Colpi ✚" } else { "Colpi" }, gray);
+        lane_label(y_cue, h_cue, ts("Scene (cue)"), gray);
+        lane_label(y_hit, h_hit, if self.tl.hit_mode { ts("Colpi ✚") } else { ts("Colpi") }, gray);
         let content = Rect::from_min_max(pos2(x0, rect.top()), pos2(rect.right(), y_end));
         let painter_c = painter.with_clip_rect(content);
         // lane borders: drag them to resize each kind of lane
@@ -644,7 +646,7 @@ impl App {
             }
         }
         ui.label(
-            RichText::new("Clic: posiziona la riproduzione · clic su una scena: selezionala · trascina l'inizio di una scena per spostarla · doppio clic: nuova scena · Colpi: attiva «Modifica colpi» per aggiungerli/spostarli · Ctrl+rotellina: zoom ↔ · Alt+rotellina: zoom ↕")
+            RichText::new(ts("Clic: posiziona la riproduzione · clic su una scena: selezionala · trascina l'inizio di una scena per spostarla · doppio clic: nuova scena · Colpi: attiva «Modifica colpi» per aggiungerli/spostarli · Ctrl+rotellina: zoom ↔ · Alt+rotellina: zoom ↕"))
                 .size(10.5)
                 .color(Color32::from_rgb(130, 130, 145)),
         );
@@ -652,7 +654,7 @@ impl App {
         self.tl.start = start;
         if let Some((p, t)) = hover_tip {
             if p.y < y_hit + h_hit {
-                resp.on_hover_text_at_pointer(format!("{}  ·  battuta {}", fmt_time(t), ana.bar_beat(t)));
+                resp.on_hover_text_at_pointer(crate::i18n::t(&format!("{}  ·  battuta {}", fmt_time(t), ana.bar_beat(t))));
             }
         }
         self.apply_acts(acts, &ana);
@@ -742,9 +744,9 @@ impl App {
                     self.push_undo();
                     let Some(s) = self.cur_song_mut() else { continue };
                     let prev = s.cues.iter().rev().find(|c| c.time <= t).cloned();
-                    let mut c = prev.unwrap_or_else(|| Cue::blank(t, "Scena"));
+                    let mut c = prev.unwrap_or_else(|| Cue::blank(t, ts("Scena")));
                     c.time = t;
-                    c.name = format!("Scena {}", s.cues.len() + 1);
+                    c.name = crate::i18n::t(&format!("Scena {}", s.cues.len() + 1));
                     s.cues.push(c);
                     s.cues.sort_by(|a, b| a.time.total_cmp(&b.time));
                     let j = s.cues.iter().position(|c| c.time == t).unwrap_or(0);
@@ -780,17 +782,17 @@ impl App {
             Sel::Section(i) => self.inspect_section(ui, i),
             Sel::Hit(i) => self.inspect_hit(ui, i),
             Sel::None => {
-                ui.heading("Come si usa");
-                ui.label("• La riga «Parti» mostra strofe, ritornelli, stacchi… riconosciuti dall'analisi. Clicca una parte per modificarla, trascina il bordo per spostarla.");
-                ui.label("• Ogni «Scena» definisce colori, intensità, effetti e movimenti di ogni gruppo di fari fino alla scena successiva. Ogni scena diventa una nota MIDI.");
-                ui.label("• I «Colpi» sono accenti sopra la scena: accecatori, strobo, flash, blackout negli stacchi.");
-                ui.label("• Premi ▶ per l'anteprima con l'audio delle tracce.");
+                ui.heading(ts("Come si usa"));
+                ui.label(ts("• La riga «Parti» mostra strofe, ritornelli, stacchi… riconosciuti dall'analisi. Clicca una parte per modificarla, trascina il bordo per spostarla."));
+                ui.label(ts("• Ogni «Scena» definisce colori, intensità, effetti e movimenti di ogni gruppo di fari fino alla scena successiva. Ogni scena diventa una nota MIDI."));
+                ui.label(ts("• I «Colpi» sono accenti sopra la scena: accecatori, strobo, flash, blackout negli stacchi."));
+                ui.label(ts("• Premi ▶ per l'anteprima con l'audio delle tracce."));
                 ui.separator();
                 if let Some(s) = self.cur_song() {
                     if let Some(a) = &s.analysis {
                         ui.label(RichText::new(&s.name).strong());
-                        ui.label(format!("{:.1} BPM · {}/4 · {}", a.bpm, a.beats_per_bar, a.character));
-                        ui.label(format!("{} parti, {} scene, {} colpi", s.sections.len(), s.cues.len(), s.hits.len()));
+                        ui.label(crate::i18n::t(&format!("{:.1} BPM · {}/4 · {}", a.bpm, a.beats_per_bar, a.character)));
+                        ui.label(crate::i18n::t(&format!("{} parti, {} scene, {} colpi", s.sections.len(), s.cues.len(), s.hits.len())));
                     }
                 }
             }
@@ -804,13 +806,13 @@ impl App {
         {
             let Some(s) = self.cur_song_mut() else { return };
             let Some(sec) = s.sections.get_mut(i) else { return };
-            ui.heading("Parte del brano");
+            ui.heading(ts("Parte del brano"));
             ui.horizontal(|ui| {
-                ui.label("Nome");
+                ui.label(ts("Nome"));
                 ui.text_edit_singleline(&mut sec.label);
             });
             ui.horizontal(|ui| {
-                ui.label("Tipo");
+                ui.label(ts("Tipo"));
                 egui::ComboBox::from_id_salt("sec_kind").selected_text(sec.kind.label()).show_ui(ui, |ui| {
                     for k in SectionKind::ALL {
                         ui.selectable_value(&mut sec.kind, k, k.label());
@@ -818,22 +820,22 @@ impl App {
                 });
             });
             ui.horizontal(|ui| {
-                ui.label("Intensità");
+                ui.label(ts("Intensità"));
                 ui.add(egui::Slider::new(&mut sec.intensity, 0.0..=1.0).show_value(false));
                 ui.label(intensity_label(sec.intensity));
             });
-            ui.label(format!(
+            ui.label(crate::i18n::t(&format!(
                 "Da {} (battuta {}) a {} — {:.0} battute",
                 fmt_time(sec.start),
                 ana.bar_beat(sec.start),
                 fmt_time(sec.end),
                 ((sec.end - sec.start) / ana.bar_len().max(0.1)).round()
-            ));
+            )));
             ui.add_space(6.0);
-            if ui.button("▶ Ascolta da qui").clicked() {
+            if ui.button(ts("▶ Ascolta da qui")).clicked() {
                 jump = Some(sec.start);
             }
-            if ui.button("✨ Rigenera le luci di questa parte").on_hover_text("Ricrea scene e colpi di questa parte secondo tipo e intensità").clicked() {
+            if ui.button(ts("✨ Rigenera le luci di questa parte")).on_hover_text(ts("Ricrea scene e colpi di questa parte secondo tipo e intensità")).clicked() {
                 regen = true;
             }
         }
@@ -852,7 +854,7 @@ impl App {
                 s.hits.extend(hits.into_iter().filter(|h| h.time >= a - 1e-6 && h.time < b - 1e-6));
                 s.sort();
             }
-            self.status = "Luci della parte rigenerate".into();
+            self.status = ts("Luci della parte rigenerate").into();
         }
     }
 
@@ -861,27 +863,27 @@ impl App {
         {
             let Some(s) = self.cur_song_mut() else { return };
             let Some(h) = s.hits.get_mut(i) else { return };
-            ui.heading("Colpo");
+            ui.heading(ts("Colpo"));
             egui::ComboBox::from_id_salt("hit_kind_edit").selected_text(h.kind.label()).show_ui(ui, |ui| {
                 for k in HitKind::ALL {
                     ui.selectable_value(&mut h.kind, k, k.label());
                 }
             });
             ui.horizontal(|ui| {
-                ui.label("Istante (s)");
+                ui.label(ts("Istante (s)"));
                 ui.add(egui::DragValue::new(&mut h.time).speed(0.01).range(0.0..=10000.0));
             });
             ui.horizontal(|ui| {
-                ui.label("Durata (s)");
+                ui.label(ts("Durata (s)"));
                 ui.add(egui::Slider::new(&mut h.duration, 0.02..=4.0).logarithmic(true));
             });
             ui.label(match h.kind {
-                HitKind::Blinder => "Gli accecatori sparano al massimo e poi si spengono rapidamente.",
-                HitKind::Strobe => "Gli strobo (o i PAR, se non ci sono strobo) lampeggiano per la durata.",
-                HitKind::Flash => "Tutti i fari fanno un flash bianco.",
-                HitKind::Blackout => "Tutto spento per la durata: ideale per gli stacchi.",
+                HitKind::Blinder => ts("Gli accecatori sparano al massimo e poi si spengono rapidamente."),
+                HitKind::Strobe => ts("Gli strobo (o i PAR, se non ci sono strobo) lampeggiano per la durata."),
+                HitKind::Flash => ts("Tutti i fari fanno un flash bianco."),
+                HitKind::Blackout => ts("Tutto spento per la durata: ideale per gli stacchi."),
             });
-            if ui.button("🗑 Elimina colpo").clicked() {
+            if ui.button(ts("🗑 Elimina colpo")).clicked() {
                 delete = true;
             }
         }
@@ -909,39 +911,39 @@ impl App {
             let Some(s) = self.cur_song_mut() else { return };
             let ncues = s.cues.len();
             let Some(c) = s.cues.get_mut(i) else { return };
-            ui.heading(format!("Scena {i}"));
+            ui.heading(crate::i18n::t(&format!("Scena {i}")));
             ui.horizontal(|ui| {
-                ui.label("Nome");
+                ui.label(ts("Nome"));
                 ui.text_edit_singleline(&mut c.name);
             });
             ui.horizontal(|ui| {
-                ui.label("Inizio (s)");
+                ui.label(ts("Inizio (s)"));
                 ui.add(egui::DragValue::new(&mut c.time).speed(0.01).range(0.0..=10000.0));
-                ui.label(format!("battuta {}", ana.bar_beat(c.time)));
+                ui.label(crate::i18n::t(&format!("battuta {}", ana.bar_beat(c.time))));
             });
             ui.horizontal(|ui| {
-                ui.label("Dissolvenza (s)");
+                ui.label(ts("Dissolvenza (s)"));
                 ui.add(egui::Slider::new(&mut c.fade, 0.0..=8.0));
             });
             ui.label(
                 RichText::new(if i <= crate::live::MAX_CUE_NOTE as usize {
-                    format!("Nota MIDI: {} ({})", i, crate::midi::note_name(i as u8))
+                    crate::i18n::t(&format!("Nota MIDI: {} ({})", i, crate::midi::note_name(i as u8)))
                 } else {
-                    "Oltre la scena 119 non c'è nota MIDI dedicata".to_string()
+                    ts("Oltre la scena 119 non c'è nota MIDI dedicata").to_string()
                 })
                 .color(Color32::from_rgb(150, 200, 255)),
             );
             ui.horizontal(|ui| {
-                if ui.button("▶ Da qui").clicked() {
+                if ui.button(ts("▶ Da qui")).clicked() {
                     jump = Some(c.time);
                 }
-                if ui.button("⧉ Duplica").clicked() {
+                if ui.button(ts("⧉ Duplica")).clicked() {
                     dup = true;
                 }
-                if ui.add_enabled(i > 0, egui::Button::new("⇐ Copia la precedente")).clicked() {
+                if ui.add_enabled(i > 0, egui::Button::new(ts("⇐ Copia la precedente"))).clicked() {
                     copy_prev = true;
                 }
-                if ui.button("🗑").on_hover_text("Elimina scena").clicked() {
+                if ui.button("🗑").on_hover_text(ts("Elimina scena")).clicked() {
                     delete = true;
                 }
             });
@@ -953,18 +955,18 @@ impl App {
                 }
                 let look = &mut c.looks[g.idx()];
                 let col = look.colors.first().copied().unwrap_or([255, 255, 255]);
-                let title = RichText::new(format!("{}  ({} fari) — {}%", g.label(), count, (look.intensity * 100.0) as i32)).color(if look.intensity > 0.01 {
+                let title = RichText::new(crate::i18n::t(&format!("{}  ({} fari) — {}%", g.label(), count, (look.intensity * 100.0) as i32))).color(if look.intensity > 0.01 {
                     c32(col)
                 } else {
                     Color32::GRAY
                 });
                 egui::CollapsingHeader::new(title).id_salt(("grp", g.idx())).default_open(look.intensity > 0.0 && *count > 0).show(ui, |ui| {
                     ui.horizontal(|ui| {
-                        ui.label("Intensità");
+                        ui.label(ts("Intensità"));
                         ui.add(egui::Slider::new(&mut look.intensity, 0.0..=1.0));
                     });
                     ui.horizontal_wrapped(|ui| {
-                        ui.label("Colori");
+                        ui.label(ts("Colori"));
                         let mut remove = None;
                         let n = look.colors.len();
                         for (k, c) in look.colors.iter_mut().enumerate() {
@@ -985,7 +987,7 @@ impl App {
                         for sw in SWATCHES {
                             let (r, resp) = ui.allocate_exact_size(vec2(16.0, 16.0), Sense::click());
                             ui.painter().rect_filled(r, 3.0, c32(sw));
-                            if resp.on_hover_text("Clic: usa questo colore · Maiusc+clic: aggiungi").clicked() {
+                            if resp.on_hover_text(ts("Clic: usa questo colore · Maiusc+clic: aggiungi")).clicked() {
                                 if ui.input(|i| i.modifiers.shift) {
                                     look.colors.push(sw);
                                 } else {
@@ -995,7 +997,7 @@ impl App {
                         }
                     });
                     ui.horizontal(|ui| {
-                        ui.label("Effetto");
+                        ui.label(ts("Effetto"));
                         egui::ComboBox::from_id_salt(("eff", g.idx())).selected_text(look.effect.label()).width(150.0).show_ui(ui, |ui| {
                             for e in Effect::ALL {
                                 ui.selectable_value(&mut look.effect, e, e.label());
@@ -1004,13 +1006,13 @@ impl App {
                     });
                     if !matches!(look.effect, Effect::Static | Effect::Off | Effect::Kick | Effect::Snare | Effect::Sparkle) {
                         ui.horizontal(|ui| {
-                            ui.label("Velocità");
+                            ui.label(ts("Velocità"));
                             rate_combo(ui, ("rate", g.idx()), &mut look.rate, &RATES);
                         });
                     }
                     if *moving || show_all {
                         ui.horizontal(|ui| {
-                            ui.label("Movimento");
+                            ui.label(ts("Movimento"));
                             egui::ComboBox::from_id_salt(("mv", g.idx())).selected_text(look.movement.label()).width(150.0).show_ui(ui, |ui| {
                                 for m in Movement::ALL {
                                     ui.selectable_value(&mut look.movement, m, m.label());
@@ -1019,33 +1021,33 @@ impl App {
                         });
                         if look.movement != Movement::Still {
                             ui.horizontal(|ui| {
-                                ui.label("Ampiezza");
+                                ui.label(ts("Ampiezza"));
                                 ui.add(egui::Slider::new(&mut look.move_size, 0.0..=1.0));
                             });
                             ui.horizontal(|ui| {
-                                ui.label("Ciclo");
+                                ui.label(ts("Ciclo"));
                                 rate_combo(ui, ("mrate", g.idx()), &mut look.move_rate, &MOVE_RATES);
                             });
-                            ui.checkbox(&mut look.mirror, "⇋ Specchia sinistra / destra")
-                                .on_hover_text("Le teste a sinistra del palco fanno lo stesso movimento ma a specchio (es. cerchio verso sinistra mentre a destra va verso destra)");
+                            ui.checkbox(&mut look.mirror, ts("⇋ Specchia sinistra / destra"))
+                                .on_hover_text(ts("Le teste a sinistra del palco fanno lo stesso movimento ma a specchio (es. cerchio verso sinistra mentre a destra va verso destra)"));
                         }
                         ui.horizontal(|ui| {
-                            ui.label("Inclinazione");
+                            ui.label(ts("Inclinazione"));
                             ui.add(egui::Slider::new(&mut look.tilt, -40.0..=85.0).suffix("°"));
                         });
                     }
                     ui.horizontal(|ui| {
-                        ui.label("Sfasamento");
+                        ui.label(ts("Sfasamento"));
                         ui.add(egui::Slider::new(&mut look.spread, 0.0..=1.0));
                     });
                     ui.horizontal(|ui| {
-                        ui.label("Strobo");
+                        ui.label(ts("Strobo"));
                         ui.add(egui::Slider::new(&mut look.strobe, 0.0..=1.0));
                     });
                 });
             }
         }
-        ui.checkbox(&mut self.show_all_groups, "Mostra anche i gruppi senza fari");
+        ui.checkbox(&mut self.show_all_groups, ts("Mostra anche i gruppi senza fari"));
         if let Some(t) = jump {
             self.seek(t);
             self.play();
@@ -1064,7 +1066,7 @@ impl App {
             if let Some(s) = self.cur_song_mut() {
                 let mut c = s.cues[i].clone();
                 c.time += bar;
-                c.name = format!("{} (copia)", c.name);
+                c.name = crate::i18n::t(&format!("{} (copia)", c.name));
                 s.cues.insert(i + 1, c);
                 s.cues.sort_by(|a, b| a.time.total_cmp(&b.time));
             }

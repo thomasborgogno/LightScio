@@ -2,7 +2,9 @@
 
 **Build a custom light show from your band's multitrack backing tracks, preview it on your computer, and run it live — synced by MIDI from your backing-track player — through a cheap USB-DMX interface.**
 
-LightSciò is a desktop app for Windows and macOS, written in Rust with [egui](https://github.com/emilk/egui). The interface is in Italian.
+LightSciò is a desktop app for Windows and macOS, written in Rust with [egui](https://github.com/emilk/egui). The interface is available in Italian and English.
+
+![LightSciò — Show editor: 2.5D stage preview, song parts, scenes, hits and multitrack waveforms](docs/screenshot.png)
 
 ---
 
@@ -45,8 +47,9 @@ On Windows, FTDI-based dongles may need the FTDI VCP driver so they appear as a 
 
 ## Other features
 
-- **Convert show for other lights** (File menu): build a new show for a different rig by mapping each new fixture group to an old one. The original show is never overwritten.
-- **Export lighting setup** (`.lucirig`), to reuse a rig across shows.
+- **Adapt an existing show** (File menu): in a project with a different set of lights, import the songs and show of another project and choose, for each group of lights in this project, which group of the old show it takes its effects from. The other file is never modified.
+- **Export / import lighting setup** (File menu, `.lucirig`): reuse stage and lights in another project. On import you can replace the current lights or add to them; a `.luci` show can be used as the source too.
+- **Languages:** Italian and English (*Preferences → Language*; *Automatic* follows the system language).
 - Lanes can be resized and hidden; the layout is saved with the project.
 - **Preferences:** text size and button size.
 - **Undo:** Ctrl+Z.
@@ -138,7 +141,7 @@ The built-in generic profiles are approximations of common channel layouts; alwa
 
 ## Other open-source components
 
-[egui / eframe](https://github.com/emilk/egui), [symphonia](https://github.com/pdeljanov/Symphonia), [cpal](https://github.com/RustAudio/cpal), [midir](https://github.com/Boddlnagg/midir), [serialport-rs](https://github.com/serialport/serialport-rs), [RustFFT](https://github.com/ejmahler/RustFFT), [ureq](https://github.com/algesten/ureq), [roxmltree](https://github.com/RazrFalcon/roxmltree), [rfd](https://github.com/PolyMeilex/rfd), [serde](https://serde.rs), [image](https://github.com/image-rs/image). Each is under its own license (MIT and/or Apache-2.0). The Windows installer is built with [Inno Setup](https://jrsoftware.org/isinfo.php).
+[egui / eframe](https://github.com/emilk/egui), [symphonia](https://github.com/pdeljanov/Symphonia), [cpal](https://github.com/RustAudio/cpal), [midir](https://github.com/Boddlnagg/midir), [serialport-rs](https://github.com/serialport/serialport-rs), [RustFFT](https://github.com/ejmahler/RustFFT), [ureq](https://github.com/algesten/ureq), [sys-locale](https://github.com/1Password/sys-locale), [roxmltree](https://github.com/RazrFalcon/roxmltree), [rfd](https://github.com/PolyMeilex/rfd), [serde](https://serde.rs), [image](https://github.com/image-rs/image). Each is under its own license (MIT and/or Apache-2.0). The Windows installer is built with [Inno Setup](https://jrsoftware.org/isinfo.php).
 
 ## Limitations
 

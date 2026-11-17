@@ -8,6 +8,7 @@ mod catalog;
 mod demo;
 mod dmx;
 mod engine;
+mod i18n;
 mod live;
 mod midi;
 mod lanes;
@@ -108,7 +109,7 @@ fn main() -> eframe::Result<()> {
     #[cfg(target_os = "macos")]
     if screenshot.is_some() {
         options.event_loop_builder = Some(Box::new(|builder| {
-            use eframe::egui_winit::winit::platform::macos::EventLoopBuilderExtMacOS;
+            use winit::platform::macos::EventLoopBuilderExtMacOS;
             builder.with_activate_ignoring_other_apps(false);
         }));
     }

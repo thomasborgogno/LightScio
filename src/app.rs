@@ -1,6 +1,8 @@
 //! Main application state, background jobs, project files and top bar.
 
 use crate::analysis::{self, AnalysisOut, LoadOutput, Progress, ProgressHandle};
+#[allow(unused_imports)]
+use crate::i18n::{t, ts};
 use crate::audio::Player;
 use crate::autoshow;
 use crate::dmx::{self, PortInfo};
@@ -135,7 +137,9 @@ pub struct App {
     /// Last grid sent to the metronome.
     pub metro_key: String,
     /// "Convert show for other lights" dialog.
-    pub convert: Option<crate::ui_convert::ConvertState>,
+    pub adapt: Option<crate::ui_convert::AdaptState>,
+    /// Lighting setup waiting for confirmation (replace or add): setup, file name.
+    pub rig_import: Option<(Rig, String)>,
     pub prefs: Prefs,
     pub show_prefs: bool,
     pub update: crate::ui_update::UpdateState,
@@ -168,6 +172,10 @@ pub fn fmt_time(t: f64) -> String {
 
 impl App {
     pub fn new(cc: &eframe::CreationContext<'_>, screenshot: Option<PathBuf>, open_file: Option<PathBuf>) -> Self {
+        // language first: everything created below uses it
+        let stored_prefs: Option<Prefs> = cc.storage.and_then(|s| s.get_string("prefs")).and_then(|s| serde_json::from_str(&s).ok());
+        let lang = std::env::var("LUCI_LANG").ok().or_else(|| stored_prefs.as_ref().map(|p| p.language.clone())).unwrap_or_else(|| "auto".into());
+        crate::i18n::set_english(crate::i18n::resolve(&lang));
         setup_style(&cc.egui_ctx);
         let catalog = crate::catalog::builtin();
         let mut path = None;
@@ -221,7 +229,7 @@ impl App {
             dmx_ports: dmx::ports(),
             dmx_choice: String::new(),
             jobs: vec![],
-            status: "Pronto".into(),
+            status: ts("Pronto").into(),
             tl: Timeline {
                 pps: 18.0,
                 start: 0.0,
@@ -247,7 +255,8 @@ impl App {
             waves: Default::default(),
             ed: EditorState { start: 0.0, pps: 22.0, drag: None, sel: None, follow: true },
             metro_key: String::new(),
-            convert: None,
+            adapt: None,
+            rig_import: None,
             prefs: Prefs::default(),
             show_prefs: false,
             update: Default::default(),
@@ -360,13 +369,13 @@ impl App {
                 self.start_load(self.song, false);
             }
             self.pending_play = Some((pos, None));
-            self.status = "Carico l'audio delle tracce, la riproduzione parte appena è pronto…".into();
+            self.status = ts("Carico l'audio delle tracce, la riproduzione parte appena è pronto…").into();
             return;
         }
         if self.audio_for == Some(self.song) {
             self.player.play(pos);
             if !self.player.error.is_empty() {
-                self.status = format!("Audio: {}", std::mem::take(&mut self.player.error));
+                self.status = crate::i18n::t(&format!("Audio: {}", std::mem::take(&mut self.player.error)));
             }
         }
         if let Ok(mut s) = self.shared.lock() {
@@ -440,7 +449,7 @@ impl App {
             if let Some(dst) = self.project.songs.get_mut(i) {
                 *dst = s;
                 self.sel = Sel::None;
-                self.status = "Modifica annullata".into();
+                self.status = ts("Modifica annullata").into();
             }
         }
     }
@@ -465,7 +474,7 @@ impl App {
                 self.start_load(self.song, false);
             }
             self.pending_play = Some((from, until));
-            self.status = "Carico l'audio del brano, parte tra un attimo…".into();
+            self.status = ts("Carico l'audio del brano, parte tra un attimo…").into();
             return;
         }
         self.player.stop();
@@ -492,7 +501,7 @@ impl App {
     pub fn start_load(&mut self, song: usize, analyze: bool) {
         let Some(s) = self.project.songs.get(song) else { return };
         if s.tracks.is_empty() {
-            self.status = "Aggiungi prima le tracce audio del brano".into();
+            self.status = ts("Aggiungi prima le tracce audio del brano").into();
             return;
         }
         let tracks = s.tracks.clone();
@@ -511,13 +520,13 @@ impl App {
     pub fn start_claude(&mut self, song: usize) {
         let Some(s) = self.project.songs.get(song) else { return };
         if s.analysis.is_none() {
-            self.status = "Analizza prima il brano".into();
+            self.status = ts("Analizza prima il brano").into();
             return;
         }
         let prompt = autoshow::claude_prompt(s, &self.project, &self.catalog);
         let cmd = self.project.settings.claude_command.clone();
         let song_copy = s.clone();
-        let progress: ProgressHandle = Arc::new(Mutex::new(Progress { frac: 0.0, msg: "Claude Code sta progettando lo show…".into() }));
+        let progress: ProgressHandle = Arc::new(Mutex::new(Progress { frac: 0.0, msg: ts("Claude Code sta progettando lo show…").into() }));
         let (tx, rx) = mpsc::channel();
         std::thread::spawn(move || {
             let out = autoshow::run_claude(&cmd, &prompt).and_then(|text| autoshow::parse_claude(&text, &song_copy));
@@ -539,10 +548,10 @@ impl App {
                 JobResult::Loaded { song, analyze, out } => match out {
                     Ok(o) => {
                         if o.audio.data.is_empty() {
-                            self.status = format!(
+                            self.status = crate::i18n::t(&format!(
                                 "Nessuna traccia audio leggibile (i file sono stati spostati o rinominati?): {}",
                                 o.errors.join("; ")
-                            );
+                            ));
                         } else if !o.errors.is_empty() {
                             self.status = format!("Alcune tracce non lette: {}", o.errors.join("; "));
                         }
@@ -570,22 +579,22 @@ impl App {
                                 if o.errors.is_empty() {
                                     let s = &self.project.songs[song];
                                     let a = s.analysis.as_ref().unwrap();
-                                    self.status = format!(
+                                    self.status = crate::i18n::t(&format!(
                                         "Analisi completata: {:.1} BPM, {} parti, {} stacchi/accenti — {}",
                                         a.bpm,
                                         s.sections.len(),
                                         a.accents.len() + a.stops.len(),
                                         a.character
-                                    );
+                                    ));
                                 }
                             }
                         } else if o.errors.is_empty() {
-                            self.status = "Audio pronto per l'anteprima".into();
+                            self.status = ts("Audio pronto per l'anteprima").into();
                         }
                     }
                     Err(e) => {
                         self.pending_play = None;
-                        self.status = format!("Errore: {e}");
+                        self.status = crate::i18n::t(&format!("Errore: {e}"));
                     }
                 },
                 JobResult::Claude { song, out } => match out {
@@ -596,11 +605,11 @@ impl App {
                             let n = c.len();
                             s.cues = c;
                             s.hits = h;
-                            self.status = format!("Claude ha creato lo show: {n} scene. Puoi modificarlo nella scheda Show (Annulla per tornare indietro).");
+                            self.status = crate::i18n::t(&format!("Claude ha creato lo show: {n} scene. Puoi modificarlo nella scheda Show (Annulla per tornare indietro)."));
                         }
                         self.sel = Sel::None;
                     }
-                    Err(e) => self.status = format!("Claude Code: {e}"),
+                    Err(e) => self.status = crate::i18n::t(&format!("Claude Code: {e}")),
                 },
             }
         }
@@ -618,7 +627,7 @@ impl App {
         self.audio_for = None; self.auto_audio_tried = None; self.waves.clear();
         self.undo.clear();
         self.push_project();
-        self.status = "Nuovo progetto: aggiungi i fari (scheda Fari e palco) e i brani (scheda Brani)".into();
+        self.status = ts("Nuovo progetto: aggiungi i fari (scheda Fari e palco) e i brani (scheda Brani)").into();
     }
 
     pub fn load_demo(&mut self) {
@@ -634,11 +643,11 @@ impl App {
         self.waves.insert(0, pk);
         self.undo.clear();
         self.push_project();
-        self.status = "Progetto demo caricato".into();
+        self.status = ts("Progetto demo caricato").into();
     }
 
     pub fn open_dialog(&mut self) {
-        if let Some(p) = rfd::FileDialog::new().add_filter("Show luci", &["luci", "json"]).pick_file() {
+        if let Some(p) = rfd::FileDialog::new().add_filter(ts("Show luci"), &["luci", "json"]).pick_file() {
             match load_project(&p) {
                 Ok(pr) => {
                     self.stop();
@@ -650,7 +659,7 @@ impl App {
                     self.audio_for = None; self.auto_audio_tried = None; self.waves.clear();
                     self.undo.clear();
                     self.push_project();
-                    self.status = format!("Aperto {}", p.display());
+                    self.status = crate::i18n::t(&format!("Aperto {}", p.display()));
                 }
                 Err(e) => self.status = e,
             }
@@ -660,8 +669,8 @@ impl App {
     pub fn save(&mut self, as_new: bool) {
         let path = if as_new || self.path.is_none() {
             rfd::FileDialog::new()
-                .add_filter("Show luci", &["luci"])
-                .set_file_name(format!("{}.luci", self.project.name))
+                .add_filter(ts("Show luci"), &["luci"])
+                .set_file_name(crate::i18n::t(&format!("{}.luci", self.project.name)))
                 .save_file()
         } else {
             self.path.clone()
@@ -670,12 +679,12 @@ impl App {
             match serde_json::to_string_pretty(&self.project) {
                 Ok(text) => match std::fs::write(&p, text) {
                     Ok(()) => {
-                        self.status = format!("Salvato in {}", p.display());
+                        self.status = crate::i18n::t(&format!("Salvato in {}", p.display()));
                         self.path = Some(p);
                     }
-                    Err(e) => self.status = format!("Impossibile salvare: {e}"),
+                    Err(e) => self.status = crate::i18n::t(&format!("Impossibile salvare: {e}")),
                 },
-                Err(e) => self.status = format!("Impossibile salvare: {e}"),
+                Err(e) => self.status = crate::i18n::t(&format!("Impossibile salvare: {e}")),
             }
         }
     }
@@ -691,15 +700,15 @@ impl App {
                     n += 1;
                 }
             }
-            self.status = format!("Esportati {n} file MIDI in {}", dir.display());
+            self.status = crate::i18n::t(&format!("Esportati {n} file MIDI in {}", dir.display()));
         } else {
             let Some(s) = self.cur_song() else { return };
             let (bytes, list) = crate::midi::export_song(s, &self.project.settings);
-            let default = format!("{} - luci.mid", s.name);
-            if let Some(p) = rfd::FileDialog::new().add_filter("MIDI", &["mid"]).set_file_name(default).save_file() {
+            let default = crate::i18n::t(&format!("{} - luci.mid", s.name));
+            if let Some(p) = rfd::FileDialog::new().add_filter(ts("MIDI"), &["mid"]).set_file_name(default).save_file() {
                 match std::fs::write(&p, bytes) {
-                    Ok(()) => self.status = format!("Traccia MIDI salvata ({} eventi) in {}", list.len(), p.display()),
-                    Err(e) => self.status = format!("Impossibile salvare il MIDI: {e}"),
+                    Ok(()) => self.status = crate::i18n::t(&format!("Traccia MIDI salvata ({} eventi) in {}", list.len(), p.display())),
+                    Err(e) => self.status = crate::i18n::t(&format!("Impossibile salvare il MIDI: {e}")),
                 }
             }
         }
@@ -711,66 +720,78 @@ impl App {
         egui::TopBottomPanel::top("top").show(ctx, |ui| {
             ui.add_space(3.0);
             ui.horizontal(|ui| {
-                ui.label(RichText::new("◉ LightSciò").strong().size(17.0).color(Color32::from_rgb(255, 196, 60)));
+                ui.label(RichText::new(ts("◉ LightSciò")).strong().size(17.0).color(Color32::from_rgb(255, 196, 60)));
                 ui.separator();
-                ui.menu_button("File", |ui| {
-                    if ui.button("Nuovo progetto").clicked() {
+                ui.menu_button(ts("File"), |ui| {
+                    if ui.button(ts("Nuovo progetto")).clicked() {
                         self.new_project();
                         ui.close_menu();
                     }
-                    if ui.button("Apri…").clicked() {
+                    if ui.button(ts("Apri…")).clicked() {
                         self.open_dialog();
                         ui.close_menu();
                     }
-                    if ui.button("Salva").clicked() {
+                    if ui.button(ts("Salva")).clicked() {
                         self.save(false);
                         ui.close_menu();
                     }
-                    if ui.button("Salva con nome…").clicked() {
+                    if ui.button(ts("Salva con nome…")).clicked() {
                         self.save(true);
                         ui.close_menu();
                     }
                     ui.separator();
-                    if ui.button("Esporta traccia MIDI del brano…").clicked() {
+                    if ui.button(ts("Esporta traccia MIDI del brano…")).clicked() {
                         self.export_midi(false);
                         ui.close_menu();
                     }
-                    if ui.button("Esporta MIDI di tutti i brani…").clicked() {
+                    if ui.button(ts("Esporta MIDI di tutti i brani…")).clicked() {
                         self.export_midi(true);
                         ui.close_menu();
                     }
                     ui.separator();
-                    if ui.button("Esporta setup luci…").on_hover_text("Salva solo palco e fari, per riusarli o convertire altri show").clicked() {
+                    if ui
+                        .button(ts("Adatta show esistente…"))
+                        .on_hover_text(ts("Importa brani e show da un altro progetto adattandoli ai fari di questo"))
+                        .clicked()
+                    {
+                        self.open_adapt();
+                        ui.close_menu();
+                    }
+                    if ui.button(ts("Esporta setup luci…")).on_hover_text(ts("Salva palco e fari in un file, per riusarli in altri progetti")).clicked() {
                         self.export_rig();
                         ui.close_menu();
                     }
-                    if ui.button("Converti show per altre luci…").clicked() {
-                        self.open_convert();
+                    if ui
+                        .button(ts("Importa setup luci…"))
+                        .on_hover_text(ts("Carica palco e fari da un file di setup o da un altro show"))
+                        .clicked()
+                    {
+                        self.pick_rig_import();
                         ui.close_menu();
                     }
                     ui.separator();
-                    if ui.button("⚙ Preferenze…").clicked() {
+                    if ui.button(ts("⚙ Preferenze…")).clicked() {
                         self.show_prefs = true;
                         ui.close_menu();
                     }
-                    if ui.button("⬆ Controlla aggiornamenti…").clicked() {
+                    if ui.button(ts("⬆ Controlla aggiornamenti…")).clicked() {
                         self.show_prefs = true;
                         self.update.dismissed = false;
                         self.start_update_check(true);
                         ui.close_menu();
                     }
                     ui.separator();
-                    if ui.button("Carica il progetto demo").clicked() {
+                    if ui.button(ts("Carica il progetto demo")).clicked() {
                         self.load_demo();
                         ui.close_menu();
                     }
                 });
                 ui.separator();
                 for (t, label) in [
-                    (Tab::Rig, "🔦 Fari e palco"),
-                    (Tab::Songs, "🎵 Brani e analisi"),
-                    (Tab::Show, "💡 Show"),
-                    (Tab::Live, "🔴 Live"),
+                    (Tab::Rig, ts("🔦 Fari e palco")),
+                    (Tab::Songs, ts("🎵 Brani e analisi")),
+                    (Tab::Show, ts("💡 Show")),
+                    (Tab::Live, ts("🔴 Live")),
                 ] {
                     let sel = self.tab == t;
                     let txt = RichText::new(label).size(14.0);
@@ -779,7 +800,7 @@ impl App {
                     }
                 }
                 ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                    if ui.button("⚙").on_hover_text("Preferenze: dimensione di testi e pulsanti").clicked() {
+                    if ui.button("⚙").on_hover_text(ts("Preferenze: dimensione di testi e pulsanti")).clicked() {
                         self.show_prefs = !self.show_prefs;
                     }
                     ui.label(RichText::new(&self.project.name).color(Color32::GRAY));
@@ -791,14 +812,14 @@ impl App {
                         }
                     };
                     let (c, t) = if live && ok {
-                        (Color32::from_rgb(80, 220, 120), "DMX attivo")
+                        (Color32::from_rgb(80, 220, 120), ts("DMX attivo"))
                     } else if live {
-                        (Color32::from_rgb(240, 160, 60), "DMX in attesa")
+                        (Color32::from_rgb(240, 160, 60), ts("DMX in attesa"))
                     } else {
-                        (Color32::GRAY, "DMX spento")
+                        (Color32::GRAY, ts("DMX spento"))
                     };
                     ui.label(RichText::new(format!("● {t}")).color(c));
-                    let m = if self.midi.conn.is_some() { ("● MIDI in ascolto", Color32::from_rgb(80, 220, 120)) } else { ("● MIDI spento", Color32::GRAY) };
+                    let m = if self.midi.conn.is_some() { (ts("● MIDI in ascolto"), Color32::from_rgb(80, 220, 120)) } else { (ts("● MIDI spento"), Color32::GRAY) };
                     ui.label(RichText::new(m.0).color(m.1));
                 });
             });
@@ -809,13 +830,13 @@ impl App {
                 for j in &self.jobs {
                     let p = j.progress.lock().map(|p| p.clone()).unwrap_or_default();
                     ui.spinner();
-                    ui.label(format!("{} — {} ({:.0}s)", j.label, p.msg, j.started.elapsed().as_secs_f32()));
+                    ui.label(crate::i18n::t(&format!("{} — {} ({:.0}s)", j.label, p.msg, j.started.elapsed().as_secs_f32())));
                     if p.frac > 0.0 {
                         ui.add(egui::ProgressBar::new(p.frac).desired_width(120.0));
                     }
                     ui.separator();
                 }
-                ui.label(RichText::new(&self.status).color(Color32::from_rgb(190, 190, 205)));
+                ui.label(RichText::new(t(&self.status)).color(Color32::from_rgb(190, 190, 205)));
             });
         });
     }
@@ -948,7 +969,8 @@ impl eframe::App for App {
             Tab::Show => self.ui_show(ctx),
             Tab::Live => self.ui_live(ctx),
         }
-        self.ui_convert(ctx);
+        self.ui_adapt(ctx);
+        self.ui_rig_import(ctx);
         self.ui_prefs(ctx);
         self.poll_update(ctx);
         let busy = self.is_playing() || !self.jobs.is_empty() || self.midi.conn.is_some();
@@ -991,16 +1013,16 @@ pub fn apply_analysis(s: &mut Song, a: AnalysisOut) {
 }
 
 pub fn load_project(p: &std::path::Path) -> Result<Project, String> {
-    let text = std::fs::read_to_string(p).map_err(|e| format!("Impossibile aprire {}: {e}", p.display()))?;
-    let mut pr: Project = serde_json::from_str(&text).map_err(|e| format!("File non valido: {e}"))?;
+    let text = std::fs::read_to_string(p).map_err(|e| crate::i18n::t(&format!("Impossibile aprire {}: {e}", p.display())))?;
+    let mut pr: Project = serde_json::from_str(&text).map_err(|e| crate::i18n::t(&format!("File non valido: {e}")))?;
     pr.fix();
     Ok(pr)
 }
 
 pub fn demo_project() -> (Project, Option<Arc<analysis::AudioBuf>>, Vec<Vec<f32>>) {
-    let mut p = Project { name: "Show demo".into(), ..Project::default() };
+    let mut p = Project { name: ts("Show demo").into(), ..Project::default() };
     crate::demo::demo_rig(&mut p);
-    let mut song = Song::new("Brano demo (sintetico)", 0);
+    let mut song = Song::new(ts("Brano demo (sintetico)"), 0);
     song.tracks = crate::demo::demo_tracks();
     let prog: ProgressHandle = Arc::new(Mutex::new(Progress::default()));
     let mut audio = None;
@@ -1077,6 +1099,8 @@ pub struct Prefs {
     pub update_repo: String,
     pub skip_version: String,
     pub last_update_check: u64,
+    /// "auto" (system), "it" or "en".
+    pub language: String,
 }
 
 impl Default for Prefs {
@@ -1088,6 +1112,7 @@ impl Default for Prefs {
             update_repo: crate::update::DEFAULT_REPO.to_string(),
             skip_version: String::new(),
             last_update_check: 0,
+            language: "auto".to_string(),
         }
     }
 }
@@ -1119,27 +1144,50 @@ impl App {
         }
         let mut open = true;
         let mut changed = false;
-        egui::Window::new("⚙ Preferenze").open(&mut open).resizable(false).default_width(380.0).show(ctx, |ui| {
+        let mut lang_changed = false;
+        egui::Window::new(ts("⚙ Preferenze")).open(&mut open).resizable(false).default_width(380.0).show(ctx, |ui| {
             egui::Grid::new("prefs").num_columns(2).spacing([12.0, 10.0]).show(ui, |ui| {
-                ui.label("Dimensione testi");
+                ui.label(ts("Dimensione testi"));
                 changed |= ui.add(egui::Slider::new(&mut self.prefs.text_scale, 0.7..=2.0).custom_formatter(|v, _| format!("{:.0}%", v * 100.0))).changed();
                 ui.end_row();
-                ui.label("Dimensione pulsanti");
+                ui.label(ts("Dimensione pulsanti"));
                 changed |= ui.add(egui::Slider::new(&mut self.prefs.button_scale, 0.7..=2.5).custom_formatter(|v, _| format!("{:.0}%", v * 100.0))).changed();
                 ui.end_row();
             });
             ui.horizontal(|ui| {
-                if ui.button("Ripristina").clicked() {
+                ui.label(ts("Lingua"));
+                let cur = self.prefs.language.clone();
+                let name = |c: &str| match c {
+                    "it" => "Italiano",
+                    "en" => "English",
+                    _ => ts("Automatica (sistema)"),
+                };
+                egui::ComboBox::from_id_salt("lang").selected_text(name(&cur)).show_ui(ui, |ui| {
+                    for c in ["auto", "it", "en"] {
+                        if ui.selectable_label(cur == c, name(c)).clicked() && cur != c {
+                            self.prefs.language = c.to_string();
+                            lang_changed = true;
+                        }
+                    }
+                });
+            });
+            ui.horizontal(|ui| {
+                if ui.button(ts("Ripristina")).clicked() {
                     self.prefs.text_scale = 1.0;
                     self.prefs.button_scale = 1.0;
                     changed = true;
                 }
-                ui.label(RichText::new("Le preferenze valgono per tutti i progetti.").size(11.0).color(Color32::GRAY));
+                ui.label(RichText::new(ts("Le preferenze valgono per tutti i progetti.")).size(11.0).color(Color32::GRAY));
             });
             self.ui_update_prefs(ui);
         });
         if changed {
             apply_prefs(ctx, &self.prefs);
+        }
+        if lang_changed {
+            crate::i18n::set_english(crate::i18n::resolve(&self.prefs.language));
+            // generic fixture names follow the language
+            self.catalog = crate::catalog::builtin();
         }
         if !open {
             self.show_prefs = false;

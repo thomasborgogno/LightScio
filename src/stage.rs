@@ -2,6 +2,8 @@
 //! top-down plan where fixtures are placed by dragging.
 
 use crate::engine::FxState;
+#[allow(unused_imports)]
+use crate::i18n::{t, ts};
 use crate::model::*;
 use egui::{pos2, vec2, Color32, Pos2, Rect, Sense, Shape, Stroke, StrokeKind};
 
@@ -323,7 +325,7 @@ pub fn draw_perspective(
     painter.text(
         pos2(rect.center().x, rect.bottom() - 6.0),
         egui::Align2::CENTER_BOTTOM,
-        "▼  PUBBLICO  ▼",
+        ts("▼  PUBBLICO  ▼"),
         egui::FontId::proportional(11.0),
         Color32::from_rgb(110, 110, 125),
     );
@@ -382,10 +384,10 @@ pub fn draw_plan(
     painter.line_segment([to_s(-hw - 0.3, d - 0.5), to_s(hw + 0.3, d - 0.5)], truss);
     let small = egui::FontId::proportional(11.0);
     let gray = Color32::from_rgb(120, 120, 135);
-    painter.text(to_s(hw + 0.35, 0.4), egui::Align2::LEFT_CENTER, "americana\nfronte", small.clone(), gray);
-    painter.text(to_s(hw + 0.35, d - 0.5), egui::Align2::LEFT_CENTER, "americana\nfondo", small.clone(), gray);
-    painter.text(to_s(0.0, -0.9), egui::Align2::CENTER_CENTER, "▼  PUBBLICO  ▼", small.clone(), gray);
-    painter.text(to_s(0.0, d + 0.25), egui::Align2::CENTER_CENTER, "fondale", small.clone(), gray);
+    painter.text(to_s(hw + 0.35, 0.4), egui::Align2::LEFT_CENTER, ts("americana\nfronte"), small.clone(), gray);
+    painter.text(to_s(hw + 0.35, d - 0.5), egui::Align2::LEFT_CENTER, ts("americana\nfondo"), small.clone(), gray);
+    painter.text(to_s(0.0, -0.9), egui::Align2::CENTER_CENTER, ts("▼  PUBBLICO  ▼"), small.clone(), gray);
+    painter.text(to_s(0.0, d + 0.25), egui::Align2::CENTER_CENTER, ts("fondale"), small.clone(), gray);
 
     // hit testing
     let pick = |p: Pos2, project: &Project| -> Option<u32> {
@@ -533,7 +535,7 @@ pub fn draw_plan(
                 painter.circle_stroke(p, 7.0, edge);
             }
         }
-        let tag = if f.hanging { format!("{} ↑{:.1}m", f.name, f.z) } else { format!("{} {:.1}m", f.name, f.z) };
+        let tag = if f.hanging { crate::i18n::t(&format!("{} ↑{:.1}m", f.name, f.z)) } else { crate::i18n::t(&format!("{} {:.1}m", f.name, f.z)) };
         painter.text(p + vec2(0.0, 11.0), egui::Align2::CENTER_TOP, tag, egui::FontId::proportional(9.5), Color32::from_rgb(170, 170, 185));
     }
     changed

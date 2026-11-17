@@ -2,6 +2,8 @@
 //! custom fixtures, patch, placement and multi-selection editing.
 
 use crate::app::*;
+#[allow(unused_imports)]
+use crate::i18n::{t, ts};
 use crate::model::*;
 use crate::stage;
 use egui::{vec2, Color32, RichText};
@@ -77,7 +79,7 @@ impl App {
             let id = self.project.next_id;
             self.project.next_id += 1;
             let group = auto_group(def.kind, y, self.project.stage.depth);
-            let short = def.kind.label().split_whitespace().next().unwrap_or("Faro").to_string();
+            let short = def.kind.label().split_whitespace().next().unwrap_or(ts("Faro")).to_string();
             self.project.fixtures.push(FixtureInstance {
                 id,
                 def_id: def.id.clone(),
@@ -95,7 +97,7 @@ impl App {
             self.sel_fixture = Some(id);
             addr = addr.saturating_add(def.footprint());
         }
-        self.status = format!("Aggiunti {n} × {}", def.name);
+        self.status = crate::i18n::t(&format!("Aggiunti {n} × {}", def.name));
     }
 
     fn conflicts(&self) -> Vec<String> {
@@ -111,11 +113,11 @@ impl App {
             .collect();
         for (i, a) in ranges.iter().enumerate() {
             if a.2 > 512 || a.1 == 0 {
-                out.push(format!("{} esce dall'universo DMX (1-512)", a.3));
+                out.push(crate::i18n::t(&format!("{} esce dall'universo DMX (1-512)", a.3)));
             }
             for b in ranges.iter().skip(i + 1) {
                 if a.1 <= b.2 && b.1 <= a.2 {
-                    out.push(format!("{} e {} si sovrappongono", a.3, b.3));
+                    out.push(crate::i18n::t(&format!("{} e {} si sovrappongono", a.3, b.3)));
                 }
             }
         }
@@ -123,9 +125,9 @@ impl App {
     }
 
     fn catalog_panel(&mut self, ui: &mut egui::Ui) {
-        ui.heading("Catalogo fari");
+        ui.heading(ts("Catalogo fari"));
         ui.horizontal(|ui| {
-            ui.add(egui::TextEdit::singleline(&mut self.search).hint_text("🔍 Cerca marca o modello…").desired_width(260.0));
+            ui.add(egui::TextEdit::singleline(&mut self.search).hint_text(ts("🔍 Cerca marca o modello…")).desired_width(260.0));
             if !self.search.is_empty() && ui.small_button("×").clicked() {
                 self.search.clear();
             }
@@ -143,10 +145,10 @@ impl App {
             let fav_ids: Vec<String> = self.favorites.iter().map(|f| f.id.clone()).collect();
             let favs: Vec<&FixtureDef> = self.favorites.iter().filter(|d| matches(&d.name)).collect();
             if !favs.is_empty() {
-                ui.label(RichText::new("★ Preferiti").strong().color(Color32::from_rgb(255, 210, 80)));
+                ui.label(RichText::new(ts("★ Preferiti")).strong().color(Color32::from_rgb(255, 210, 80)));
                 for d in favs {
                     let sel = self.qlc_pick.is_none() && self.catalog_pick == d.id;
-                    if ui.selectable_label(sel, format!("★ {} · {} can.", d.name, d.channels.len())).clicked() {
+                    if ui.selectable_label(sel, crate::i18n::t(&format!("★ {} · {} can.", d.name, d.channels.len()))).clicked() {
                         pick_def = Some(d.id.clone());
                     }
                 }
@@ -154,10 +156,10 @@ impl App {
             let mine: Vec<&FixtureDef> =
                 self.project.custom_defs.iter().filter(|d| !fav_ids.contains(&d.id) && matches(&d.name)).collect();
             if !mine.is_empty() {
-                ui.label(RichText::new("Nel progetto").strong().color(Color32::from_rgb(255, 200, 100)));
+                ui.label(RichText::new(ts("Nel progetto")).strong().color(Color32::from_rgb(255, 200, 100)));
                 for d in mine {
                     let sel = self.qlc_pick.is_none() && self.catalog_pick == d.id;
-                    if ui.selectable_label(sel, format!("{} · {} can.", d.name, d.channels.len())).clicked() {
+                    if ui.selectable_label(sel, crate::i18n::t(&format!("{} · {} can.", d.name, d.channels.len()))).clicked() {
                         pick_def = Some(d.id.clone());
                     }
                 }
@@ -168,10 +170,10 @@ impl App {
                 if items.is_empty() {
                     continue;
                 }
-                ui.label(RichText::new(format!("Generici · {}", kind.label())).strong().color(Color32::from_rgb(200, 170, 110)));
+                ui.label(RichText::new(crate::i18n::t(&format!("Generici · {}", kind.label()))).strong().color(Color32::from_rgb(200, 170, 110)));
                 for d in items {
                     let sel = self.qlc_pick.is_none() && self.catalog_pick == d.id;
-                    if ui.selectable_label(sel, format!("{} · {} can.", d.name, d.channels.len())).clicked() {
+                    if ui.selectable_label(sel, crate::i18n::t(&format!("{} · {} can.", d.name, d.channels.len()))).clicked() {
                         pick_def = Some(d.id.clone());
                     }
                 }
@@ -180,15 +182,15 @@ impl App {
             if self.qlc_rx.is_some() {
                 ui.horizontal(|ui| {
                     ui.spinner();
-                    ui.label("Leggo la libreria QLC+…");
+                    ui.label(ts("Leggo la libreria QLC+…"));
                 });
             } else if self.qlc.is_empty() {
-                ui.label(RichText::new("Libreria QLC+ non trovata: indica la cartella qui sotto.").color(Color32::GRAY));
+                ui.label(RichText::new(ts("Libreria QLC+ non trovata: indica la cartella qui sotto.")).color(Color32::GRAY));
             } else if words.is_empty() {
-                ui.label(RichText::new(format!("Libreria QLC+: {} modelli. Scrivi nella ricerca per trovarli.", self.qlc.len())).color(Color32::GRAY));
+                ui.label(RichText::new(crate::i18n::t(&format!("Libreria QLC+: {} modelli. Scrivi nella ricerca per trovarli.", self.qlc.len()))).color(Color32::GRAY));
             } else {
                 let found: Vec<&crate::qlc::QlcEntry> = self.qlc.iter().filter(|e| words.iter().all(|w| e.key.contains(w))).collect();
-                ui.label(RichText::new(format!("Libreria QLC+ · {} risultati", found.len())).strong().color(Color32::from_rgb(120, 190, 255)));
+                ui.label(RichText::new(crate::i18n::t(&format!("Libreria QLC+ · {} risultati", found.len()))).strong().color(Color32::from_rgb(120, 190, 255)));
                 for e in found.iter().take(MAX_RESULTS) {
                     let sel = self.qlc_pick.as_ref().map(|(p, _)| p == &e.path).unwrap_or(false);
                     if ui.selectable_label(sel, format!("{} — {}  ({})", e.manufacturer, e.model, e.kind)).clicked() {
@@ -196,7 +198,7 @@ impl App {
                     }
                 }
                 if found.len() > MAX_RESULTS {
-                    ui.label(RichText::new(format!("…e altri {}: affina la ricerca", found.len() - MAX_RESULTS)).color(Color32::GRAY));
+                    ui.label(RichText::new(crate::i18n::t(&format!("…e altri {}: affina la ricerca", found.len() - MAX_RESULTS))).color(Color32::GRAY));
                 }
             }
         });
@@ -217,17 +219,17 @@ impl App {
                     let mut m = mode.min(modes.len() - 1);
                     egui::ComboBox::from_id_salt("qlc_mode")
                         .width(280.0)
-                        .selected_text(format!("Modo: {} ({} can.)", modes[m].name.rsplit("— ").next().unwrap_or(""), modes[m].channels.len()))
+                        .selected_text(crate::i18n::t(&format!("Modo: {} ({} can.)", modes[m].name.rsplit("— ").next().unwrap_or(""), modes[m].channels.len())))
                         .show_ui(ui, |ui| {
                             for (i, d) in modes.iter().enumerate() {
-                                ui.selectable_value(&mut m, i, format!("{} ({} canali)", d.name.rsplit("— ").next().unwrap_or(""), d.channels.len()));
+                                ui.selectable_value(&mut m, i, crate::i18n::t(&format!("{} ({} canali)", d.name.rsplit("— ").next().unwrap_or(""), d.channels.len())));
                             }
                         });
                     self.qlc_pick = Some((path, m));
                 }
                 Ok(_) => {}
                 Err(e) => {
-                    ui.label(RichText::new(format!("Impossibile leggere il file: {e}")).color(Color32::from_rgb(255, 140, 80)));
+                    ui.label(RichText::new(crate::i18n::t(&format!("Impossibile leggere il file: {e}"))).color(Color32::from_rgb(255, 140, 80)));
                 }
             }
         }
@@ -240,15 +242,15 @@ impl App {
                 }
             });
             ui.horizontal(|ui| {
-                ui.label("Quanti");
+                ui.label(ts("Quanti"));
                 ui.add(egui::DragValue::new(&mut self.add_count).range(1..=24));
-                if ui.button(RichText::new("➕ Aggiungi al palco").strong()).clicked() {
+                if ui.button(RichText::new(ts("➕ Aggiungi al palco")).strong()).clicked() {
                     self.add_fixtures(d.clone(), self.add_count);
                 }
             });
             ui.horizontal(|ui| {
                 let is_fav = self.favorites.iter().any(|f| f.id == d.id);
-                let star = if is_fav { "★ Togli dai preferiti" } else { "☆ Aggiungi ai preferiti" };
+                let star = if is_fav { ts("★ Togli dai preferiti") } else { ts("☆ Aggiungi ai preferiti") };
                 if ui.button(star).clicked() {
                     if is_fav {
                         self.favorites.retain(|f| f.id != d.id);
@@ -256,32 +258,32 @@ impl App {
                         self.favorites.push(d.clone());
                     }
                 }
-                if ui.button("✏ Duplica e modifica").clicked() {
+                if ui.button(ts("✏ Duplica e modifica")).clicked() {
                     let mut nd = d.clone();
                     nd.custom = true;
                     nd.id = String::new();
-                    nd.name = format!("{} (mio)", d.name);
+                    nd.name = crate::i18n::t(&format!("{} (mio)", d.name));
                     self.edit_def = Some(nd);
                 }
                 if d.custom && self.project.custom_defs.iter().any(|x| x.id == d.id) {
                     let used = self.project.fixtures.iter().any(|f| f.def_id == d.id);
-                    if ui.add_enabled(!used, egui::Button::new("🗑")).on_hover_text("Togli il modello dal progetto (solo se non usato)").clicked() {
+                    if ui.add_enabled(!used, egui::Button::new("🗑")).on_hover_text(ts("Togli il modello dal progetto (solo se non usato)")).clicked() {
                         self.project.custom_defs.retain(|x| x.id != d.id);
                     }
                 }
             });
         }
         ui.separator();
-        if ui.button("✏ Nuovo faro personalizzato…").clicked() {
+        if ui.button(ts("✏ Nuovo faro personalizzato…")).clicked() {
             self.edit_def = Some(FixtureDef {
                 id: String::new(),
-                name: "Il mio faro".into(),
+                name: ts("Il mio faro").into(),
                 kind: FixtureKind::Par,
                 channels: vec![
-                    ch("Dimmer", ChannelKind::Dimmer, 0),
-                    ch("Rosso", ChannelKind::Red, 0),
-                    ch("Verde", ChannelKind::Green, 0),
-                    ch("Blu", ChannelKind::Blue, 0),
+                    ch(ts("Dimmer"), ChannelKind::Dimmer, 0),
+                    ch(ts("Rosso"), ChannelKind::Red, 0),
+                    ch(ts("Verde"), ChannelKind::Green, 0),
+                    ch(ts("Blu"), ChannelKind::Blue, 0),
                 ],
                 pan_range: 540.0,
                 tilt_range: 270.0,
@@ -294,8 +296,8 @@ impl App {
                 custom: true,
             });
         }
-        egui::CollapsingHeader::new("Libreria QLC+").id_salt("qlc_dirs").show(ui, |ui| {
-            ui.label(RichText::new("Cartelle con i file .qxf (anche la cartella di QLC+ intera).").size(11.0).color(Color32::GRAY));
+        egui::CollapsingHeader::new(ts("Libreria QLC+")).id_salt("qlc_dirs").show(ui, |ui| {
+            ui.label(RichText::new(ts("Cartelle con i file .qxf (anche la cartella di QLC+ intera).")).size(11.0).color(Color32::GRAY));
             let mut remove = None;
             for (i, d) in self.qlc_dirs.iter().enumerate() {
                 ui.horizontal(|ui| {
@@ -309,13 +311,13 @@ impl App {
                 self.qlc_dirs.remove(i);
             }
             ui.horizontal(|ui| {
-                if ui.button("📁 Aggiungi cartella…").clicked() {
+                if ui.button(ts("📁 Aggiungi cartella…")).clicked() {
                     if let Some(p) = rfd::FileDialog::new().pick_folder() {
                         self.qlc_dirs.push(p);
                         self.start_qlc_scan();
                     }
                 }
-                if ui.button("⟳ Rileggi").clicked() {
+                if ui.button(ts("⟳ Rileggi")).clicked() {
                     self.qlc_cache.clear();
                     self.start_qlc_scan();
                 }
@@ -333,16 +335,16 @@ impl App {
 
         egui::CentralPanel::default().show(ctx, |ui| {
             ui.horizontal(|ui| {
-                ui.selectable_value(&mut self.stage_mode, StageMode::Plan, "🗺 Pianta (trascina i fari)");
-                ui.selectable_value(&mut self.stage_mode, StageMode::Perspective, "🎭 Vista dal pubblico");
+                ui.selectable_value(&mut self.stage_mode, StageMode::Plan, ts("🗺 Pianta (trascina i fari)"));
+                ui.selectable_value(&mut self.stage_mode, StageMode::Perspective, ts("🎭 Vista dal pubblico"));
                 ui.separator();
                 let st = &mut self.project.stage;
-                ui.label("Palco");
-                ui.add(egui::DragValue::new(&mut st.width).range(3.0..=40.0).speed(0.1).suffix(" m largo"));
-                ui.add(egui::DragValue::new(&mut st.depth).range(2.0..=25.0).speed(0.1).suffix(" m profondo"));
-                ui.label("Americane");
-                ui.add(egui::DragValue::new(&mut st.truss_front).range(1.0..=12.0).speed(0.05).suffix(" m fronte"));
-                ui.add(egui::DragValue::new(&mut st.truss_back).range(1.0..=12.0).speed(0.05).suffix(" m fondo"));
+                ui.label(ts("Palco"));
+                ui.add(egui::DragValue::new(&mut st.width).range(3.0..=40.0).speed(0.1).suffix(ts(" m largo")));
+                ui.add(egui::DragValue::new(&mut st.depth).range(2.0..=25.0).speed(0.1).suffix(ts(" m profondo")));
+                ui.label(ts("Americane"));
+                ui.add(egui::DragValue::new(&mut st.truss_front).range(1.0..=12.0).speed(0.05).suffix(ts(" m fronte")));
+                ui.add(egui::DragValue::new(&mut st.truss_back).range(1.0..=12.0).speed(0.05).suffix(ts(" m fondo")));
             });
             let avail = ui.available_size();
             let t = self.now();
@@ -368,7 +370,7 @@ impl App {
                 }
             }
             ui.label(
-                RichText::new("Pianta vista dall'alto (in basso il pubblico). Ctrl/Maiusc+clic: aggiungi alla selezione · trascina sul vuoto: selezione a riquadro · trascina un faro: sposta tutti i selezionati.")
+                RichText::new(ts("Pianta vista dall'alto (in basso il pubblico). Ctrl/Maiusc+clic: aggiungi alla selezione · trascina sul vuoto: selezione a riquadro · trascina un faro: sposta tutti i selezionati."))
                     .size(11.0)
                     .color(Color32::GRAY),
             );
@@ -391,9 +393,9 @@ impl App {
 
     fn fixture_panel(&mut self, ctx: &egui::Context) {
         egui::SidePanel::right("fixtures").default_width(340.0).resizable(true).show(ctx, |ui| {
-            ui.heading(format!("Fari sul palco ({})", self.project.fixtures.len()));
+            ui.heading(crate::i18n::t(&format!("Fari sul palco ({})", self.project.fixtures.len())));
             ui.horizontal(|ui| {
-                if ui.button("Ripatch automatico").on_hover_text("Riassegna gli indirizzi DMX in sequenza, senza sovrapposizioni").clicked() {
+                if ui.button(ts("Ripatch automatico")).on_hover_text(ts("Riassegna gli indirizzi DMX in sequenza, senza sovrapposizioni")).clicked() {
                     let mut a = 1u16;
                     let cat = self.catalog.clone();
                     let sizes: Vec<u16> = self.project.fixtures.iter().map(|f| self.project.def(&cat, &f.def_id).map(|d| d.footprint()).unwrap_or(1)).collect();
@@ -401,14 +403,14 @@ impl App {
                         f.address = a.min(512);
                         a = a.saturating_add(n);
                     }
-                    self.status = "Indirizzi DMX riassegnati".into();
+                    self.status = ts("Indirizzi DMX riassegnati").into();
                 }
-                if ui.button("Tutti").on_hover_text("Seleziona tutti i fari").clicked() {
+                if ui.button(ts("Tutti")).on_hover_text(ts("Seleziona tutti i fari")).clicked() {
                     self.sel_set = self.project.fixtures.iter().map(|f| f.id).collect();
                     self.sel_fixture = self.sel_set.iter().next().copied();
                 }
                 let used = self.project.next_address(&self.catalog) - 1;
-                ui.label(RichText::new(format!("canali: {used}/512")).color(Color32::GRAY));
+                ui.label(RichText::new(crate::i18n::t(&format!("canali: {used}/512"))).color(Color32::GRAY));
             });
             for c in self.conflicts().iter().take(4) {
                 ui.label(RichText::new(format!("⚠ {c}")).color(Color32::from_rgb(255, 150, 80)));
@@ -433,7 +435,7 @@ impl App {
                     }
                     ui.label(RichText::new(g.label()).strong().color(Color32::from_rgb(255, 200, 100)));
                     for (id, name, a, b) in members {
-                        let txt = format!("{name}   DMX {a}-{b}");
+                        let txt = crate::i18n::t(&format!("{name}   DMX {a}-{b}"));
                         if ui.selectable_label(self.sel_set.contains(&id), txt).clicked() {
                             let (ctrl, shift) = ui.input(|i| (i.modifiers.ctrl || i.modifiers.command, i.modifiers.shift));
                             clicked = Some((id, ctrl, shift));
@@ -458,7 +460,7 @@ impl App {
                     self.select_fixture(id, ctrl);
                 }
             }
-            ui.label(RichText::new("Ctrl+clic: aggiungi/togli · Maiusc+clic: intervallo").size(10.5).color(Color32::GRAY));
+            ui.label(RichText::new(ts("Ctrl+clic: aggiungi/togli · Maiusc+clic: intervallo")).size(10.5).color(Color32::GRAY));
             ui.separator();
             // drop ids that no longer exist
             let ids: std::collections::BTreeSet<u32> = self.project.fixtures.iter().map(|f| f.id).collect();
@@ -480,7 +482,7 @@ impl App {
 
     fn single_props(&mut self, ui: &mut egui::Ui) {
         let Some(id) = self.sel_fixture else {
-            ui.label("Seleziona un faro nella lista o sul palco.");
+            ui.label(ts("Seleziona un faro nella lista o sul palco."));
             return;
         };
         let defs = self.all_defs();
@@ -492,54 +494,54 @@ impl App {
             let f = &mut self.project.fixtures[idx];
             let def = defs.iter().find(|d| d.id == f.def_id);
             egui::Grid::new("fx_props").num_columns(2).spacing([8.0, 4.0]).show(ui, |ui| {
-                ui.label("Nome");
+                ui.label(ts("Nome"));
                 ui.text_edit_singleline(&mut f.name);
                 ui.end_row();
-                ui.label("Modello");
+                ui.label(ts("Modello"));
                 egui::ComboBox::from_id_salt("fx_model").width(200.0).selected_text(def.map(|d| d.name.clone()).unwrap_or_else(|| "?".into())).show_ui(ui, |ui| {
                     for d in &defs {
                         ui.selectable_value(&mut f.def_id, d.id.clone(), &d.name);
                     }
                 });
                 ui.end_row();
-                ui.label("Gruppo");
+                ui.label(ts("Gruppo"));
                 egui::ComboBox::from_id_salt("fx_group").width(200.0).selected_text(f.group.label()).show_ui(ui, |ui| {
                     for g in Group::ALL {
                         ui.selectable_value(&mut f.group, g, g.label());
                     }
                 });
                 ui.end_row();
-                ui.label("Indirizzo DMX");
+                ui.label(ts("Indirizzo DMX"));
                 ui.horizontal(|ui| {
                     ui.add(egui::DragValue::new(&mut f.address).range(1..=512));
                     if let Some(d) = def {
-                        ui.label(format!("→ {} ({} canali)", f.address + d.footprint() - 1, d.footprint()));
+                        ui.label(crate::i18n::t(&format!("→ {} ({} canali)", f.address + d.footprint() - 1, d.footprint())));
                     }
                 });
                 ui.end_row();
-                ui.label("Posizione");
+                ui.label(ts("Posizione"));
                 ui.horizontal(|ui| {
-                    ui.add(egui::DragValue::new(&mut f.x).speed(0.05).range(-20.0..=20.0).prefix("x ").suffix(" m"));
-                    ui.add(egui::DragValue::new(&mut f.y).speed(0.05).range(-2.0..=25.0).prefix("prof. ").suffix(" m"));
+                    ui.add(egui::DragValue::new(&mut f.x).speed(0.05).range(-20.0..=20.0).prefix(ts("x ")).suffix(ts(" m")));
+                    ui.add(egui::DragValue::new(&mut f.y).speed(0.05).range(-2.0..=25.0).prefix(ts("prof. ")).suffix(ts(" m")));
                 });
                 ui.end_row();
-                ui.label("Altezza");
-                ui.add(egui::DragValue::new(&mut f.z).speed(0.05).range(0.0..=12.0).suffix(" m"));
+                ui.label(ts("Altezza"));
+                ui.add(egui::DragValue::new(&mut f.z).speed(0.05).range(0.0..=12.0).suffix(ts(" m")));
                 ui.end_row();
-                ui.label("Montaggio");
+                ui.label(ts("Montaggio"));
                 ui.horizontal(|ui| {
-                    ui.radio_value(&mut f.hanging, false, "a terra");
-                    ui.radio_value(&mut f.hanging, true, "appeso");
+                    ui.radio_value(&mut f.hanging, false, ts("a terra"));
+                    ui.radio_value(&mut f.hanging, true, ts("appeso"));
                 });
                 ui.end_row();
                 let moving = def.map(|d| d.kind.is_moving()).unwrap_or(false);
-                ui.label(if moving { "Pan di riposo" } else { "Rotazione" });
+                ui.label(if moving { ts("Pan di riposo") } else { ts("Rotazione") });
                 ui.add(egui::Slider::new(&mut f.aim_pan, -180.0..=180.0).suffix("°"));
                 ui.end_row();
                 if !moving {
-                    ui.label("Inclinazione");
+                    ui.label(ts("Inclinazione"));
                     ui.add(egui::Slider::new(&mut f.aim_tilt, -90.0..=90.0).suffix("°"))
-                        .on_hover_text("0° = dritto in verticale; positivo = verso il pubblico; negativo = verso il fondo");
+                        .on_hover_text(ts("0° = dritto in verticale; positivo = verso il pubblico; negativo = verso il fondo"));
                     ui.end_row();
                 }
             });
@@ -547,13 +549,13 @@ impl App {
                 ui.label(RichText::new(format!("{} — {}", d.kind.label(), d.capabilities())).size(11.0).color(Color32::GRAY));
             }
             ui.horizontal(|ui| {
-                if ui.button("💡 Identifica").on_hover_text("Accende solo questo faro per 3 secondi (anche sull'uscita DMX)").clicked() {
+                if ui.button(ts("💡 Identifica")).on_hover_text(ts("Accende solo questo faro per 3 secondi (anche sull'uscita DMX)")).clicked() {
                     identify = true;
                 }
-                if ui.button("⧉ Duplica").clicked() {
+                if ui.button(ts("⧉ Duplica")).clicked() {
                     duplicate = true;
                 }
-                if ui.button("🗑 Elimina").clicked() {
+                if ui.button(ts("🗑 Elimina")).clicked() {
                     delete = true;
                 }
             });
@@ -581,7 +583,7 @@ impl App {
             self.project.next_id += 1;
             nf.x += 1.0;
             nf.address = self.project.next_address(&self.catalog);
-            nf.name = format!("{} bis", nf.name);
+            nf.name = crate::i18n::t(&format!("{} bis", nf.name));
             new_ids.insert(nf.id);
             self.project.fixtures.push(nf);
         }
@@ -593,8 +595,8 @@ impl App {
     fn multi_props(&mut self, ui: &mut egui::Ui) {
         let ids = self.sel_set.clone();
         let n = ids.len();
-        ui.label(RichText::new(format!("{n} fari selezionati")).strong().size(15.0));
-        ui.label(RichText::new("Ogni modifica qui sotto vale per tutti i fari selezionati.").size(11.0).color(Color32::GRAY));
+        ui.label(RichText::new(crate::i18n::t(&format!("{n} fari selezionati"))).strong().size(15.0));
+        ui.label(RichText::new(ts("Ogni modifica qui sotto vale per tutti i fari selezionati.")).size(11.0).color(Color32::GRAY));
         let first = self.project.fixtures.iter().find(|f| Some(f.id) == self.sel_fixture || ids.contains(&f.id)).cloned();
         let Some(first) = first else { return };
         let sel: Vec<&FixtureInstance> = self.project.fixtures.iter().filter(|f| ids.contains(&f.id)).collect();
@@ -607,10 +609,10 @@ impl App {
         let mut y = first.y;
         let (mut ch_group, mut ch_z, mut ch_hang, mut ch_pan, mut ch_tilt, mut ch_y) = (false, false, false, false, false, false);
         egui::Grid::new("multi_props").num_columns(2).spacing([8.0, 4.0]).show(ui, |ui| {
-            ui.label("Gruppo");
+            ui.label(ts("Gruppo"));
             egui::ComboBox::from_id_salt("multi_group")
                 .width(200.0)
-                .selected_text(if same_group { group.label() } else { "(misto)" })
+                .selected_text(if same_group { group.label() } else { ts("(misto)") })
                 .show_ui(ui, |ui| {
                     for g in Group::ALL {
                         if ui.selectable_value(&mut group, g, g.label()).clicked() {
@@ -619,22 +621,22 @@ impl App {
                     }
                 });
             ui.end_row();
-            ui.label("Profondità");
-            ch_y = ui.add(egui::DragValue::new(&mut y).speed(0.05).range(-2.0..=25.0).suffix(" m")).changed();
+            ui.label(ts("Profondità"));
+            ch_y = ui.add(egui::DragValue::new(&mut y).speed(0.05).range(-2.0..=25.0).suffix(ts(" m"))).changed();
             ui.end_row();
-            ui.label("Altezza");
-            ch_z = ui.add(egui::DragValue::new(&mut z).speed(0.05).range(0.0..=12.0).suffix(" m")).changed();
+            ui.label(ts("Altezza"));
+            ch_z = ui.add(egui::DragValue::new(&mut z).speed(0.05).range(0.0..=12.0).suffix(ts(" m"))).changed();
             ui.end_row();
-            ui.label("Montaggio");
+            ui.label(ts("Montaggio"));
             ui.horizontal(|ui| {
-                ch_hang |= ui.radio_value(&mut hanging, false, "a terra").changed();
-                ch_hang |= ui.radio_value(&mut hanging, true, "appeso").changed();
+                ch_hang |= ui.radio_value(&mut hanging, false, ts("a terra")).changed();
+                ch_hang |= ui.radio_value(&mut hanging, true, ts("appeso")).changed();
             });
             ui.end_row();
-            ui.label("Pan / rotazione");
+            ui.label(ts("Pan / rotazione"));
             ch_pan = ui.add(egui::Slider::new(&mut aim_pan, -180.0..=180.0).suffix("°")).changed();
             ui.end_row();
-            ui.label("Inclinazione");
+            ui.label(ts("Inclinazione"));
             ch_tilt = ui.add(egui::Slider::new(&mut aim_tilt, -90.0..=90.0).suffix("°")).changed();
             ui.end_row();
         });
@@ -646,15 +648,15 @@ impl App {
         let mut mirror = false;
         let mut repatch = false;
         ui.horizontal_wrapped(|ui| {
-            align_row = ui.button("⇔ Allinea in riga").on_hover_text("Stessa profondità e altezza del faro principale").clicked();
-            spread = ui.button("↔ Distribuisci").on_hover_text("Spaziatura uguale tra il più a sinistra e il più a destra").clicked();
-            mirror = ui.button("⇋ Specchia").on_hover_text("Ribalta destra/sinistra rispetto al centro del palco").clicked();
+            align_row = ui.button(ts("⇔ Allinea in riga")).on_hover_text(ts("Stessa profondità e altezza del faro principale")).clicked();
+            spread = ui.button(ts("↔ Distribuisci")).on_hover_text(ts("Spaziatura uguale tra il più a sinistra e il più a destra")).clicked();
+            mirror = ui.button(ts("⇋ Specchia")).on_hover_text(ts("Ribalta destra/sinistra rispetto al centro del palco")).clicked();
         });
         ui.horizontal_wrapped(|ui| {
-            repatch = ui.button("Indirizzi in sequenza").on_hover_text("Indirizzi DMX consecutivi a partire dal primo selezionato").clicked();
-            identify = ui.button("💡 Identifica").clicked();
-            dup = ui.button("⧉ Duplica").clicked();
-            del = ui.button("🗑 Elimina").clicked();
+            repatch = ui.button(ts("Indirizzi in sequenza")).on_hover_text(ts("Indirizzi DMX consecutivi a partire dal primo selezionato")).clicked();
+            identify = ui.button(ts("💡 Identifica")).clicked();
+            dup = ui.button(ts("⧉ Duplica")).clicked();
+            del = ui.button(ts("🗑 Elimina")).clicked();
         });
         let cat = self.catalog.clone();
         let sizes: std::collections::HashMap<u32, u16> = self
@@ -740,23 +742,23 @@ impl App {
         let mut open = true;
         let mut save = false;
         let mut cancel = false;
-        egui::Window::new("Faro personalizzato").open(&mut open).default_width(520.0).resizable(true).show(ctx, |ui| {
+        egui::Window::new(ts("Faro personalizzato")).open(&mut open).default_width(520.0).resizable(true).show(ctx, |ui| {
             egui::Grid::new("def_head").num_columns(2).show(ui, |ui| {
-                ui.label("Nome modello");
+                ui.label(ts("Nome modello"));
                 ui.text_edit_singleline(&mut d.name);
                 ui.end_row();
-                ui.label("Tipo");
+                ui.label(ts("Tipo"));
                 egui::ComboBox::from_id_salt("def_kind").selected_text(d.kind.label()).show_ui(ui, |ui| {
                     for k in FixtureKind::ALL {
                         ui.selectable_value(&mut d.kind, k, k.label());
                     }
                 });
                 ui.end_row();
-                ui.label("Apertura fascio");
+                ui.label(ts("Apertura fascio"));
                 ui.add(egui::Slider::new(&mut d.beam_angle, 2.0..=70.0).suffix("°"));
                 ui.end_row();
                 if d.kind.is_moving() {
-                    ui.label("Escursione pan / tilt");
+                    ui.label(ts("Escursione pan / tilt"));
                     ui.horizontal(|ui| {
                         ui.add(egui::DragValue::new(&mut d.pan_range).range(90.0..=720.0).suffix("°"));
                         ui.add(egui::DragValue::new(&mut d.tilt_range).range(90.0..=360.0).suffix("°"));
@@ -764,13 +766,13 @@ impl App {
                     ui.end_row();
                 }
                 if d.has(ChannelKind::Shutter) || d.has(ChannelKind::Strobe) {
-                    ui.label("Shutter aperto / chiuso");
+                    ui.label(ts("Shutter aperto / chiuso"));
                     ui.horizontal(|ui| {
                         ui.add(egui::DragValue::new(&mut d.shutter_open));
                         ui.add(egui::DragValue::new(&mut d.shutter_closed));
                     });
                     ui.end_row();
-                    ui.label("Strobo lento → veloce");
+                    ui.label(ts("Strobo lento → veloce"));
                     ui.horizontal(|ui| {
                         ui.add(egui::DragValue::new(&mut d.strobe_min));
                         ui.add(egui::DragValue::new(&mut d.strobe_max));
@@ -779,7 +781,7 @@ impl App {
                 }
             });
             ui.separator();
-            ui.label(RichText::new("Canali DMX (nell'ordine del manuale del faro)").strong());
+            ui.label(RichText::new(ts("Canali DMX (nell'ordine del manuale del faro)")).strong());
             let mut remove = None;
             let mut swap = None;
             egui::ScrollArea::vertical().max_height(260.0).show(ui, |ui| {
@@ -793,7 +795,7 @@ impl App {
                                 ui.selectable_value(&mut c.kind, k, k.label());
                             }
                         });
-                        ui.add(egui::DragValue::new(&mut c.default)).on_hover_text("Valore di riposo / fisso");
+                        ui.add(egui::DragValue::new(&mut c.default)).on_hover_text(ts("Valore di riposo / fisso"));
                         ui.horizontal(|ui| {
                             if i > 0 && ui.small_button("↑").clicked() {
                                 swap = Some((i, i - 1));
@@ -815,12 +817,12 @@ impl App {
             if let Some(i) = remove {
                 d.channels.remove(i);
             }
-            if ui.button("+ Aggiungi canale").clicked() {
-                d.channels.push(ch(&format!("Canale {}", d.channels.len() + 1), ChannelKind::Other, 0));
+            if ui.button(ts("+ Aggiungi canale")).clicked() {
+                d.channels.push(ch(&crate::i18n::t(&format!("Canale {}", d.channels.len() + 1)), ChannelKind::Other, 0));
             }
             if d.has(ChannelKind::ColorWheel) {
                 ui.separator();
-                ui.label(RichText::new("Ruota colori: valore DMX → colore").strong());
+                ui.label(RichText::new(ts("Ruota colori: valore DMX → colore")).strong());
                 let mut rm = None;
                 ui.horizontal_wrapped(|ui| {
                     for (i, s) in d.color_wheel.iter_mut().enumerate() {
@@ -835,17 +837,17 @@ impl App {
                 if let Some(i) = rm {
                     d.color_wheel.remove(i);
                 }
-                if ui.button("+ Colore").clicked() {
+                if ui.button(ts("+ Colore")).clicked() {
                     let v = d.color_wheel.last().map(|s| s.value.saturating_add(10)).unwrap_or(0);
                     d.color_wheel.push(ColorSlot { value: v, color: [255, 255, 255] });
                 }
             }
             ui.separator();
             ui.horizontal(|ui| {
-                if ui.button(RichText::new("💾 Salva modello").strong()).clicked() {
+                if ui.button(RichText::new(ts("💾 Salva modello")).strong()).clicked() {
                     save = true;
                 }
-                if ui.button("Annulla").clicked() {
+                if ui.button(ts("Annulla")).clicked() {
                     cancel = true;
                 }
             });
@@ -868,7 +870,7 @@ impl App {
             }
             self.catalog_pick = d.id.clone();
             self.qlc_pick = None;
-            self.status = format!("Modello «{}» salvato nel progetto", d.name);
+            self.status = crate::i18n::t(&format!("Modello «{}» salvato nel progetto", d.name));
             return;
         }
         if open && !cancel {

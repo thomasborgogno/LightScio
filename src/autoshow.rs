@@ -228,7 +228,7 @@ pub fn generate(song: &Song) -> (Vec<Cue>, Vec<Hit>) {
                     looks[Group::HeadsBack.idx()].movement = Movement::TiltSweep;
                     looks[Group::HeadsBack.idx()].move_rate = 2.0;
                 }
-                let name = if roll { format!("Rullata verso {}", n.label) } else { format!("Salita verso {}", n.label) };
+                let name = if roll { crate::i18n::t(&format!("Rullata verso {}", n.label)) } else { crate::i18n::t(&format!("Salita verso {}", n.label)) };
                 let mut c = Cue { time: t, name, fade: 0.05, looks };
                 c.fix();
                 cues.push(c);
@@ -254,7 +254,7 @@ pub fn generate(song: &Song) -> (Vec<Cue>, Vec<Hit>) {
         hits.push(Hit { time: t, kind, duration: if kind == HitKind::Blinder { 0.2 } else { 0.08 } });
     }
     // fade to black at the end
-    let mut end = Cue::blank((a.duration - 0.2).max(0.0), "Buio finale");
+    let mut end = Cue::blank((a.duration - 0.2).max(0.0), crate::i18n::ts("Buio finale"));
     end.fade = 2.5;
     if cues.last().map(|c| c.time < end.time - 1.0).unwrap_or(true) {
         cues.push(end);
@@ -320,7 +320,7 @@ Reply with ONLY one JSON object (no prose, no code fences) with this exact shape
 
 - "time" in seconds from the song start; place cues on beats (beat length = 60/bpm s, first downbeat at first_downbeat_s).
 - Use at least one cue per section and change looks every 8 bars inside long sections; between 10 and 60 cues.
-- "name": short Italian name (e.g. "Strofa 1", "Ritornello 2 - variazione").
+- "name": short {lang} name (e.g. {ex}).
 - "fade": seconds of crossfade into the cue (0.05 for punchy changes, 1-3 for calm ones).
 - GROUP keys: only those listed in rig_groups ({gk}).
 - LOOK = {{"intensity":0..1,"colors":[[r,g,b],...1-3 colors 0-255],"effect":E,"rate":beats per effect cycle (0.25-16),"movement":M,"move_size":0..1,"move_rate":beats per movement cycle (1-32),"tilt":degrees from vertical towards the audience (-30..80),"spread":0..1 phase spread between fixtures,"strobe":0..1 (0 = off),"mirror":true/false (moving heads on the left side do the movement mirrored, for symmetric looks)}}
@@ -336,6 +336,8 @@ Reply with ONLY one JSON object (no prose, no code fences) with this exact shape
         gk = Group::ALL.iter().map(|g| format!("{g:?}")).collect::<Vec<_>>().join(", "),
         eff = effect_names().join(", "),
         mov = movement_names().join(", "),
+        lang = if crate::i18n::is_english() { "English" } else { "Italian" },
+        ex = if crate::i18n::is_english() { "\"Verse 1\", \"Chorus 2 - variation\"" } else { "\"Strofa 1\", \"Ritornello 2 - variazione\"" },
     )
 }
 

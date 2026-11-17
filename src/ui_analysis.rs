@@ -3,6 +3,8 @@
 //! on the tracks before the show is generated.
 
 use crate::app::*;
+#[allow(unused_imports)]
+use crate::i18n::{t, ts};
 use crate::lanes::{self, Lane};
 use crate::model::*;
 use egui::{pos2, vec2, Color32, Rect, RichText, Sense, Stroke, StrokeKind};
@@ -47,7 +49,7 @@ impl App {
                 self.seek(0.0);
                 self.ed.start = 0.0;
             }
-            if ui.button(big(if playing { "⏸" } else { "▶" })).on_hover_text("Ascolta (barra spaziatrice)").clicked() {
+            if ui.button(big(if playing { "⏸" } else { "▶" })).on_hover_text(ts("Ascolta (barra spaziatrice)")).clicked() {
                 if playing {
                     self.pause()
                 } else {
@@ -57,35 +59,35 @@ impl App {
             if ui.button(big("⏹")).clicked() {
                 self.stop();
             }
-            if ui.add_enabled(!self.undo.is_empty(), egui::Button::new("↶ Annulla")).on_hover_text("Annulla l'ultima modifica (Ctrl+Z)").clicked() {
+            if ui.add_enabled(!self.undo.is_empty(), egui::Button::new(ts("↶ Annulla"))).on_hover_text(ts("Annulla l'ultima modifica (Ctrl+Z)")).clicked() {
                 self.do_undo();
                 self.ed.sel = None;
             }
             let bb = self.cur_song().and_then(|s| s.analysis.as_ref()).map(|a| a.bar_beat(t_now)).unwrap_or_default();
             ui.label(RichText::new(fmt_time(t_now)).monospace().size(18.0).color(Color32::from_rgb(255, 210, 90)));
-            ui.label(RichText::new(format!("battuta {bb}")).monospace());
+            ui.label(RichText::new(crate::i18n::t(&format!("battuta {bb}"))).monospace());
             let mut metro = self.player.metronome_on();
-            if ui.toggle_value(&mut metro, "🥁 Click").on_hover_text("Aggiunge un click sui battiti all'ascolto: serve a verificare la griglia").changed() {
+            if ui.toggle_value(&mut metro, ts("🥁 Click")).on_hover_text(ts("Aggiunge un click sui battiti all'ascolto: serve a verificare la griglia")).changed() {
                 self.player.set_metronome_on(metro);
             }
             ui.separator();
             let si = self.song;
             if let Some(a) = self.project.songs.get_mut(si).and_then(|s| s.analysis.as_mut()) {
-                ui.label("Tempo");
-                ui.add(egui::DragValue::new(&mut a.bpm).range(30.0..=300.0).speed(0.02).suffix(" BPM"));
-                ui.label("Primo battere");
-                ui.add(egui::DragValue::new(&mut a.offset).range(0.0..=60.0).speed(0.002).suffix(" s"))
-                    .on_hover_text("Puoi anche trascinare la bandierina gialla sul righello");
-                ui.label("Battiti/battuta");
+                ui.label(ts("Tempo"));
+                ui.add(egui::DragValue::new(&mut a.bpm).range(30.0..=300.0).speed(0.02).suffix(ts(" BPM")));
+                ui.label(ts("Primo battere"));
+                ui.add(egui::DragValue::new(&mut a.offset).range(0.0..=60.0).speed(0.002).suffix(ts(" s")))
+                    .on_hover_text(ts("Puoi anche trascinare la bandierina gialla sul righello"));
+                ui.label(ts("Battiti/battuta"));
                 ui.add(egui::DragValue::new(&mut a.beats_per_bar).range(1..=12));
             }
             ui.separator();
-            add_db = ui.button("＋ Nuovo battere qui").on_hover_text("Fa ripartire le battute dal punto di ascolto (per battute più corte). Anche doppio clic sul righello.").clicked();
+            add_db = ui.button(ts("＋ Nuovo battere qui")).on_hover_text(ts("Fa ripartire le battute dal punto di ascolto (per battute più corte). Anche doppio clic sul righello.")).clicked();
             let has_db = self.cur_song().and_then(|s| s.analysis.as_ref()).map(|a| !a.downbeats.is_empty()).unwrap_or(false);
             if has_db {
-                clear_db = ui.button("Togli i battere aggiunti").clicked();
+                clear_db = ui.button(ts("Togli i battere aggiunti")).clicked();
             }
-            align = ui.button("⇤ Allinea le parti alle battute").on_hover_text("Sposta ogni confine tra le parti sulla battuta più vicina").clicked();
+            align = ui.button(ts("⇤ Allinea le parti alle battute")).on_hover_text(ts("Sposta ogni confine tra le parti sulla battuta più vicina")).clicked();
         });
         if add_db || clear_db || align {
             self.push_undo();
@@ -136,29 +138,29 @@ impl App {
                             ui.selectable_value(&mut s.kind, k, k.label());
                         }
                     });
-                    ui.label("Intensità");
+                    ui.label(ts("Intensità"));
                     ui.add(egui::Slider::new(&mut s.intensity, 0.0..=1.0).show_value(false));
                     ui.label(intensity_label(s.intensity));
-                    ui.label(RichText::new(format!("battute {}–{}", a.bar_number(s.start + 0.01), a.bar_number(s.end - 0.01))).monospace());
-                    if ui.button("▶ Ascolta la parte").clicked() {
+                    ui.label(RichText::new(crate::i18n::t(&format!("battute {}–{}", a.bar_number(s.start + 0.01), a.bar_number(s.end - 0.01)))).monospace());
+                    if ui.button(ts("▶ Ascolta la parte")).clicked() {
                         sec_act = Some(crate::ui_songs::SecAct::Play(s.start, s.end));
                     }
-                    if ui.button("⇥ Ascolta l'attacco").on_hover_text("Da una battuta prima a una dopo l'inizio della parte").clicked() {
+                    if ui.button(ts("⇥ Ascolta l'attacco")).on_hover_text(ts("Da una battuta prima a una dopo l'inizio della parte")).clicked() {
                         sec_act = Some(crate::ui_songs::SecAct::Play((s.start - bar).max(0.0), s.start + bar));
                     }
-                    if ui.add_enabled(i + 1 < nsec, egui::Button::new("⊕ Unisci alla successiva")).clicked() {
+                    if ui.add_enabled(i + 1 < nsec, egui::Button::new(ts("⊕ Unisci alla successiva"))).clicked() {
                         sec_act = Some(crate::ui_songs::SecAct::Merge(i));
                     }
-                    if ui.button("✂ Dividi al punto di ascolto").clicked() {
+                    if ui.button(ts("✂ Dividi al punto di ascolto")).clicked() {
                         sec_act = Some(crate::ui_songs::SecAct::SplitAt(t_now));
                     }
-                    if ui.add_enabled(nsec > 1, egui::Button::new("🗑")).on_hover_text("Elimina la parte (si unisce alla precedente)").clicked() {
+                    if ui.add_enabled(nsec > 1, egui::Button::new("🗑")).on_hover_text(ts("Elimina la parte (si unisce alla precedente)")).clicked() {
                         del_sec = true;
                     }
                 }
                 None => {
                     ui.label(
-                        RichText::new("Clicca una parte per modificarla · trascina i bordi delle parti (si agganciano alle battute) · doppio clic su una parte: dividila · trascina la bandierina gialla per spostare il primo battere · doppio clic sul righello: nuovo battere · tasto destro su un battere aggiunto: toglilo")
+                        RichText::new(ts("Clicca una parte per modificarla · trascina i bordi delle parti (si agganciano alle battute) · doppio clic su una parte: dividila · trascina la bandierina gialla per spostare il primo battere · doppio clic sul righello: nuovo battere · tasto destro su un battere aggiunto: toglilo"))
                             .size(11.0)
                             .color(Color32::GRAY),
                     );
@@ -185,14 +187,14 @@ impl App {
             }
         }
         ui.horizontal(|ui| {
-            ui.label("Zoom ↔");
+            ui.label(ts("Zoom ↔"));
             ui.add(egui::Slider::new(&mut self.ed.pps, 3.0..=300.0).logarithmic(true).show_value(false));
-            ui.label("Zoom ↕ tracce");
+            ui.label(ts("Zoom ↕ tracce"));
             ui.add(egui::Slider::new(&mut self.project.view.track_h, 8.0..=160.0).show_value(false));
-            ui.checkbox(&mut self.project.view.show_energy, "Energia");
-            ui.checkbox(&mut self.ed.follow, "Segui");
+            ui.checkbox(&mut self.project.view.show_energy, ts("Energia"));
+            ui.checkbox(&mut self.ed.follow, ts("Segui"));
             if !self.waves.contains_key(&self.song) {
-                ui.label(RichText::new("(forme d'onda in caricamento…)").color(Color32::GRAY));
+                ui.label(RichText::new(ts("(forme d'onda in caricamento…)")).color(Color32::GRAY));
             }
         });
 
@@ -245,10 +247,10 @@ impl App {
             painter.text(pos2(rect.left() + 6.0, y + h / 2.0), egui::Align2::LEFT_CENTER, t, egui::FontId::proportional((h * 0.5).clamp(9.5, 13.0)), c);
         };
         let gray = Color32::from_rgb(150, 150, 165);
-        lab(y_r, h_ruler, "Battute", gray);
-        lab(y_sec, h_sec, "Parti", gray);
+        lab(y_r, h_ruler, ts("Battute"), gray);
+        lab(y_sec, h_sec, ts("Parti"), gray);
         if h_en > 0.0 {
-            lab(y_en, h_en, "Energia", gray);
+            lab(y_en, h_en, ts("Energia"), gray);
         }
         for (row, &ti) in visible.iter().enumerate() {
             let t = &song.tracks[ti];
@@ -424,7 +426,7 @@ impl App {
         if let Some(p) = resp.hover_pos() {
             if p.x >= x0 {
                 let t = xt(p.x);
-                resp.clone().on_hover_text_at_pointer(format!("{}  ·  battuta {}", fmt_time(t), ana.bar_beat(t)));
+                resp.clone().on_hover_text_at_pointer(crate::i18n::t(&format!("{}  ·  battuta {}", fmt_time(t), ana.bar_beat(t))));
             }
         }
         self.ed.start = start;
@@ -527,7 +529,7 @@ impl App {
                             a.downbeats.sort_by(|x, y| x.total_cmp(y));
                         }
                     }
-                    self.status = "Nuovo battere aggiunto: da qui le battute ripartono (tasto destro sulla bandierina per toglierlo)".into();
+                    self.status = ts("Nuovo battere aggiunto: da qui le battute ripartono (tasto destro sulla bandierina per toglierlo)").into();
                 }
                 EAct::DelDownbeat(i) => {
                     self.push_undo();
