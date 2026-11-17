@@ -140,6 +140,11 @@ pub struct App {
     pub adapt: Option<crate::ui_convert::AdaptState>,
     /// Lighting setup waiting for confirmation (replace or add): setup, file name.
     pub rig_import: Option<(Rig, String)>,
+    /// The user pressed Stop on the MIDI input: do not reconnect by itself.
+    pub midi_user_off: bool,
+    pub last_auto_check: Option<Instant>,
+    /// Show started at login (cached, refreshed when changed).
+    pub autostart_show: Option<PathBuf>,
     pub prefs: Prefs,
     pub show_prefs: bool,
     pub update: crate::ui_update::UpdateState,
@@ -257,6 +262,9 @@ impl App {
             metro_key: String::new(),
             adapt: None,
             rig_import: None,
+            midi_user_off: false,
+            last_auto_check: None,
+            autostart_show: crate::autostart::current(),
             prefs: Prefs::default(),
             show_prefs: false,
             update: Default::default(),
@@ -346,6 +354,7 @@ impl App {
             }
         }
         app.push_project();
+        app.enter_auto_live();
         app
     }
 
@@ -660,6 +669,7 @@ impl App {
                     self.undo.clear();
                     self.push_project();
                     self.status = crate::i18n::t(&format!("Aperto {}", p.display()));
+                    self.enter_auto_live();
                 }
                 Err(e) => self.status = e,
             }
@@ -973,6 +983,7 @@ impl eframe::App for App {
         self.ui_rig_import(ctx);
         self.ui_prefs(ctx);
         self.poll_update(ctx);
+        self.auto_live_tick();
         let busy = self.is_playing() || !self.jobs.is_empty() || self.midi.conn.is_some();
         if busy {
             ctx.request_repaint();

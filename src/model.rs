@@ -871,6 +871,14 @@ pub struct Settings {
     pub claude_command: String,
     pub stop_note_at_end: bool,
     pub master: f32,
+    /// Last MIDI input port used (remembered with the project).
+    pub midi_port: String,
+    /// Last DMX interface port used.
+    pub dmx_port: String,
+    /// Opening the project goes straight to Live and connects MIDI/DMX by itself.
+    pub auto_live: bool,
+    /// If the remembered MIDI port is missing, use the first available one.
+    pub any_midi_port: bool,
 }
 
 impl Default for Settings {
@@ -882,6 +890,10 @@ impl Default for Settings {
             claude_command: "claude".to_string(),
             stop_note_at_end: true,
             master: 1.0,
+            midi_port: String::new(),
+            dmx_port: String::new(),
+            auto_live: false,
+            any_midi_port: true,
         }
     }
 }

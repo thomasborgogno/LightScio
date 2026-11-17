@@ -27,4 +27,21 @@ fn main() {
         .unwrap_or_else(|| std::env::var("CARGO_PKG_VERSION").unwrap_or_else(|_| "0.0.0".into()));
     let v = v.trim().trim_start_matches(['v', 'V']).to_string();
     println!("cargo:rustc-env=APP_VERSION={v}");
+
+    // Windows: icon and version information inside the .exe
+    println!("cargo:rerun-if-changed=assets/icon.ico");
+    #[cfg(windows)]
+    {
+        let mut res = winresource::WindowsResource::new();
+        res.set_icon("assets/icon.ico");
+        res.set("ProductName", "LightSciò");
+        res.set("FileDescription", "LightSciò — light show da multitraccia");
+        res.set("ProductVersion", &v);
+        res.set("FileVersion", &v);
+        res.set("LegalCopyright", "MIT License");
+        // a missing resource compiler must not break the build: only the icon would be missing
+        if let Err(e) = res.compile() {
+            println!("cargo:warning=icon not embedded in the .exe: {e}");
+        }
+    }
 }

@@ -602,6 +602,23 @@ Importati {} brani adattati a questo setup luci. Ricordati di salvare il progett
 
 {} - luci.mid ||| {0} - lights.mid
 
+# ---------------- automatic start (rack)
+Avvio automatico (computer in rack) ||| Automatic start (rack computer)
+All'apertura di questo show vai in Live e collega MIDI e DMX da solo ||| When this show opens, go to Live and connect MIDI and DMX by itself
+Si collega appena le interfacce sono disponibili e si ricollega se vengono staccate e riattaccate ||| Connects as soon as the interfaces are available and reconnects if they are unplugged and plugged back in
+Se la porta MIDI ricordata non c'è, usa la prima disponibile ||| If the remembered MIDI port is missing, use the first available one
+Ricordati: MIDI «{}», canale {}, DMX «{}» ||| Remembered: MIDI “{0}”, channel {1}, DMX “{2}”
+Avvia LightSciò all'accensione del computer con questo show ||| Start LightSciò with this show when the computer starts
+Salva prima il progetto ||| Save the project first
+All'accensione si aprirà questo show in Live. Salva il progetto per ricordare le impostazioni. ||| At start-up this show will open in Live. Save the project to keep the settings.
+Avvio all'accensione disattivato ||| Start at power-on turned off
+Impossibile impostare l'avvio automatico: {} ||| Could not set the automatic start: {0}
+All'accensione si apre un altro show: {} ||| At start-up another show opens: {0}
+Per un computer in rack conviene anche: accesso automatico dell'utente e sospensione disattivata nelle impostazioni del sistema. ||| For a rack computer also set, in the system settings: automatic user login and sleep turned off.
+Avvio automatico in Live: collego MIDI e DMX appena sono disponibili ||| Automatic Live start: connecting MIDI and DMX as soon as they are available
+Ingresso MIDI «{}» scollegato: lo ricollego appena torna ||| MIDI input “{0}” unplugged: it will reconnect as soon as it is back
+In ascolto su «{}» (avvio automatico) ||| Listening on “{0}” (automatic start)
+
 # ---------------- lighting setup export / import
 Esporta setup luci… ||| Export lighting setup…
 Salva palco e fari in un file, per riusarli in altri progetti ||| Save stage and lights to a file, to reuse them in other projects

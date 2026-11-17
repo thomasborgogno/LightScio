@@ -28,6 +28,17 @@ lipo -create -output "$APP/Contents/MacOS/lightscio" \
   target/x86_64-apple-darwin/release/lightscio
 cp README.md LICENSE "$APP/Contents/Resources/"
 
+# app icon (.icns) from assets/icon.png
+ICONSET="target/icon.iconset"
+rm -rf "$ICONSET"
+mkdir -p "$ICONSET"
+for s in 16 32 128 256 512; do
+  sips -z "$s" "$s" assets/icon.png --out "$ICONSET/icon_${s}x${s}.png" >/dev/null
+  sips -z "$((s * 2))" "$((s * 2))" assets/icon.png --out "$ICONSET/icon_${s}x${s}@2x.png" >/dev/null
+done
+iconutil -c icns "$ICONSET" -o "$APP/Contents/Resources/icon.icns"
+rm -rf "$ICONSET"
+
 cat > "$APP/Contents/Info.plist" <<EOF
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -37,12 +48,34 @@ cat > "$APP/Contents/Info.plist" <<EOF
   <key>CFBundleDisplayName</key><string>LightSciò</string>
   <key>CFBundleIdentifier</key><string>io.github.thomasborgogno.lightscio</string>
   <key>CFBundleExecutable</key><string>lightscio</string>
+  <key>CFBundleIconFile</key><string>icon</string>
   <key>CFBundlePackageType</key><string>APPL</string>
   <key>CFBundleShortVersionString</key><string>${VERSION}</string>
   <key>CFBundleVersion</key><string>${VERSION}</string>
   <key>LSMinimumSystemVersion</key><string>11.0</string>
   <key>NSHighResolutionCapable</key><true/>
   <key>LSApplicationCategoryType</key><string>public.app-category.music</string>
+  <key>UTExportedTypeDeclarations</key>
+  <array>
+    <dict>
+      <key>UTTypeIdentifier</key><string>io.github.thomasborgogno.lightscio.show</string>
+      <key>UTTypeDescription</key><string>LightSciò show</string>
+      <key>UTTypeConformsTo</key><array><string>public.json</string><string>public.data</string></array>
+      <key>UTTypeIconFile</key><string>icon</string>
+      <key>UTTypeTagSpecification</key>
+      <dict><key>public.filename-extension</key><array><string>luci</string></array></dict>
+    </dict>
+  </array>
+  <key>CFBundleDocumentTypes</key>
+  <array>
+    <dict>
+      <key>CFBundleTypeName</key><string>LightSciò show</string>
+      <key>CFBundleTypeRole</key><string>Editor</string>
+      <key>LSHandlerRank</key><string>Owner</string>
+      <key>CFBundleTypeIconFile</key><string>icon</string>
+      <key>LSItemContentTypes</key><array><string>io.github.thomasborgogno.lightscio.show</string></array>
+    </dict>
+  </array>
 </dict>
 </plist>
 EOF

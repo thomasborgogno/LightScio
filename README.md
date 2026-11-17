@@ -1,3 +1,5 @@
+<img src="docs/icon.png" alt="LightSciò icon" width="128" align="right">
+
 # LightSciò
 
 **Build a custom light show from your band's multitrack backing tracks, preview it on your computer, and run it live — synced by MIDI from your backing-track player — through a cheap USB-DMX interface.**
@@ -36,6 +38,16 @@ LightSciò is a desktop app for Windows and macOS, written in Rust with [egui](h
 
 The listening channel is configurable (default 16, or "all"). The exported `.mid` contains the Program Change, one note per scene, and an optional stop note at the end. The Live tab shows every message received.
 
+### Rack computer / automatic start
+
+In the Live tab, under *Avvio automatico*:
+
+- The project remembers the last MIDI input port, the MIDI channel and the DMX interface (saved with the show).
+- **Go to Live and connect by itself:** when the show is opened, LightSciò switches to Live. It connects the MIDI input and the DMX interface as soon as they are plugged in, and reconnects them if they are unplugged and plugged back. If the remembered MIDI port is missing it can use the first one available.
+- **Start with this show when the computer starts:** on Windows it adds an entry to the user's startup programs; on macOS it adds a login agent (`~/Library/LaunchAgents`).
+
+For an unattended rack computer, also turn on automatic user login and turn off sleep in the system settings.
+
 ## DMX output
 
 - **Open DMX / FTDI** style USB dongles (the common low-cost ones), using serial break + 250 kbaud.
@@ -69,7 +81,7 @@ On Windows, FTDI-based dongles may need the FTDI VCP driver so they appear as a 
 Download the latest version from the [Releases page](https://github.com/thomasborgogno/LightScio/releases/latest):
 
 - **Windows:** `LightScio-Setup-<version>.exe`. It installs per user (no administrator rights needed), adds a Start-menu entry, can create a desktop shortcut, and can open `.luci` show files by double click.
-- **macOS:** `LightScio-<version>-macOS.dmg`. Open it and drag **LightScio** into **Applications**. It is a universal build for Apple Silicon and Intel, macOS 11 or later.
+- **macOS:** `LightScio-<version>-macOS.dmg`. Open it and drag **LightScio** into **Applications**. It is a universal build for Apple Silicon and Intel, macOS 11 or later. `.luci` files show the app icon. A double click starts LightSciò, but the show may not open by itself yet: use *File → Apri*.
 
 The installers are not signed with a paid certificate:
 
@@ -115,6 +127,8 @@ cargo build --release
 ```
 
 The executable is `target/release/lightscio` (`lightscio.exe` on Windows).
+
+To change the app icon, put the new square picture somewhere and run `cargo run --example make_icons -- <picture.png>`. It rebuilds `assets/icon.png`, `assets/icon-256.png` and `assets/icon.ico`. The Windows executable, the installer, the macOS app and the window all use these files.
 
 Command-line options:
 

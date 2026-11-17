@@ -3,6 +3,7 @@
 mod analysis;
 mod app;
 mod audio;
+mod autostart;
 mod autoshow;
 mod catalog;
 mod demo;
@@ -97,6 +98,9 @@ fn main() -> eframe::Result<()> {
         .with_title("LightSciò — light show da multitraccia")
         .with_inner_size([1440.0, 900.0])
         .with_min_inner_size([1000.0, 640.0]);
+    if let Some(icon) = app_icon() {
+        viewport = viewport.with_icon(std::sync::Arc::new(icon));
+    }
     if screenshot.is_some() {
         viewport = viewport.with_active(false);
         #[cfg(target_os = "windows")]
@@ -122,6 +126,13 @@ fn main() -> eframe::Result<()> {
 
 
 const APP_NAME: &str = "LightSciò";
+
+/// Window / taskbar icon.
+fn app_icon() -> Option<egui::IconData> {
+    let img = image::load_from_memory(include_bytes!("../assets/icon-256.png")).ok()?.to_rgba8();
+    let (width, height) = img.dimensions();
+    Some(egui::IconData { rgba: img.into_raw(), width, height })
+}
 
 /// Keep favourites and the last project from the previous name of the app.
 fn migrate_storage() {

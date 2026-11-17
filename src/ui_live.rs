@@ -35,11 +35,17 @@ impl App {
                     if ui.add_enabled(!self.midi_choice.is_empty(), egui::Button::new(RichText::new(ts("▶ Ascolta")).strong())).clicked() {
                         let name = self.midi_choice.clone();
                         self.midi.connect(&name, self.shared.clone());
+                        if self.midi.conn.is_some() {
+                            // remembered with the project (saved on Save)
+                            self.project.settings.midi_port = name;
+                            self.midi_user_off = false;
+                        }
                     }
                 } else {
                     ui.label(RichText::new(crate::i18n::t(&format!("● in ascolto su {}", self.midi.port_name))).color(Color32::from_rgb(80, 220, 120)));
                     if ui.button(ts("Stop")).clicked() {
                         self.midi.disconnect();
+                        self.midi_user_off = true;
                     }
                 }
             });
@@ -57,6 +63,8 @@ impl App {
                 });
             });
             ui.checkbox(&mut self.project.settings.stop_note_at_end, ts("Nella traccia MIDI: nota di stop a fine brano"));
+            ui.separator();
+            self.ui_autostart(ui);
             ui.separator();
             ui.label(RichText::new(ts("Cosa capisce l'app")).strong());
             for l in [
@@ -152,6 +160,7 @@ impl App {
             ui.horizontal(|ui| {
                 if !connected {
                     if ui.add_enabled(!self.dmx_choice.is_empty(), egui::Button::new(RichText::new(ts("▶ Collega")).strong())).clicked() {
+                        self.project.settings.dmx_port = self.dmx_choice.clone();
                         self.push_project();
                         if let Ok(mut s) = self.shared.lock() {
                             s.dmx.port = Some(self.dmx_choice.clone());

@@ -33,6 +33,120 @@ fn fallback(g: Group) -> &'static [Group] {
 }
 
 impl App {
+    /// Rack mode: called when a project is opened. Goes to Live and arms the
+    /// automatic connection of the remembered MIDI input and DMX interface.
+    pub fn enter_auto_live(&mut self) {
+        if !self.project.settings.auto_live {
+            return;
+        }
+        self.tab = Tab::Live;
+        self.midi_user_off = false;
+        let dmx = self.project.settings.dmx_port.clone();
+        if !dmx.is_empty() {
+            self.dmx_choice = dmx.clone();
+            if let Ok(mut s) = self.shared.lock() {
+                // the DMX thread retries every 2 s until the interface is plugged in
+                s.dmx.port = Some(dmx);
+            }
+        }
+        self.last_auto_check = None;
+        self.status = ts("Avvio automatico in Live: collego MIDI e DMX appena sono disponibili").into();
+    }
+
+    /// Rack mode watcher (every 2 s): connect the MIDI input when it appears,
+    /// drop the connection when the device disappears, reconnect when it is back.
+    pub fn auto_live_tick(&mut self) {
+        if !self.project.settings.auto_live || self.screenshot.is_some() {
+            return;
+        }
+        if self.last_auto_check.map(|t| t.elapsed() < std::time::Duration::from_secs(2)).unwrap_or(false) {
+            return;
+        }
+        self.last_auto_check = Some(std::time::Instant::now());
+        let ports = crate::midi::MidiIn::ports();
+        self.midi_ports = ports.clone();
+        if self.midi.conn.is_some() {
+            if !ports.contains(&self.midi.port_name) {
+                let gone = self.midi.port_name.clone();
+                self.midi.disconnect();
+                self.status = t(&format!("Ingresso MIDI «{}» scollegato: lo ricollego appena torna", gone));
+            }
+            return;
+        }
+        if self.midi_user_off || ports.is_empty() {
+            return;
+        }
+        let saved = self.project.settings.midi_port.clone();
+        // same name, or same name without the number Windows sometimes appends
+        let base = |s: &str| s.trim_end_matches(|c: char| c.is_ascii_digit() || c == ' ').to_lowercase();
+        let pick = ports
+            .iter()
+            .find(|p| **p == saved)
+            .or_else(|| if saved.is_empty() { None } else { ports.iter().find(|p| base(p) == base(&saved)) })
+            .or_else(|| if self.project.settings.any_midi_port || saved.is_empty() { ports.first() } else { None })
+            .cloned();
+        if let Some(p) = pick {
+            self.midi_choice = p.clone();
+            self.midi.connect(&p, self.shared.clone());
+            if self.midi.conn.is_some() {
+                self.status = t(&format!("In ascolto su «{}» (avvio automatico)", p));
+            }
+        }
+    }
+
+    /// "Avvio automatico" box in the Live tab.
+    pub fn ui_autostart(&mut self, ui: &mut egui::Ui) {
+        ui.label(RichText::new(ts("Avvio automatico (computer in rack)")).strong());
+        let s = &mut self.project.settings;
+        ui.checkbox(&mut s.auto_live, ts("All'apertura di questo show vai in Live e collega MIDI e DMX da solo"))
+            .on_hover_text(ts("Si collega appena le interfacce sono disponibili e si ricollega se vengono staccate e riattaccate"));
+        ui.add_enabled_ui(s.auto_live, |ui| {
+            ui.checkbox(&mut s.any_midi_port, ts("Se la porta MIDI ricordata non c'è, usa la prima disponibile"));
+        });
+        let none = ts("nessuna");
+        ui.label(
+            RichText::new(t(&format!(
+                "Ricordati: MIDI «{}», canale {}, DMX «{}»",
+                if s.midi_port.is_empty() { none } else { s.midi_port.as_str() },
+                if s.midi_channel == 0 { ts("tutti").to_string() } else { s.midi_channel.to_string() },
+                if s.dmx_port.is_empty() { none } else { s.dmx_port.as_str() }
+            )))
+            .size(11.0)
+            .color(Color32::GRAY),
+        );
+        // start at login with this show
+        let saved_path = self.path.clone();
+        let at_login = match (&self.autostart_show, &saved_path) {
+            (Some(a), Some(p)) => a == p,
+            _ => false,
+        };
+        let mut want = at_login;
+        let resp = ui.add_enabled(saved_path.is_some(), egui::Checkbox::new(&mut want, ts("Avvia LightSciò all'accensione del computer con questo show")));
+        if saved_path.is_none() {
+            resp.on_hover_text(ts("Salva prima il progetto"));
+        }
+        if want != at_login {
+            let r = if want { crate::autostart::enable(saved_path.as_deref().unwrap_or(std::path::Path::new(""))) } else { crate::autostart::disable() };
+            match r {
+                Ok(()) => {
+                    if want && !self.project.settings.auto_live {
+                        self.project.settings.auto_live = true;
+                    }
+                    self.status = if want { ts("All'accensione si aprirà questo show in Live. Salva il progetto per ricordare le impostazioni.") } else { ts("Avvio all'accensione disattivato") }.into();
+                }
+                Err(e) => self.status = t(&format!("Impossibile impostare l'avvio automatico: {}", e)),
+            }
+            self.autostart_show = crate::autostart::current();
+        } else if let (Some(a), false) = (&self.autostart_show, at_login) {
+            ui.label(RichText::new(t(&format!("All'accensione si apre un altro show: {}", a.display()))).size(11.0).color(Color32::GRAY));
+        }
+        ui.label(
+            RichText::new(ts("Per un computer in rack conviene anche: accesso automatico dell'utente e sospensione disattivata nelle impostazioni del sistema."))
+                .size(10.5)
+                .color(Color32::GRAY),
+        );
+    }
+
     /// Save stage + fixtures (+ custom fixture models) to a .lucirig file.
     pub fn export_rig(&mut self) {
         let Some(p) = rfd::FileDialog::new()
