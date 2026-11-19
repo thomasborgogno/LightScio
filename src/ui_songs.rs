@@ -166,6 +166,7 @@ impl App {
             };
             let mut analyze = false;
             let mut add = false;
+            let mut relink = false;
             let mut gen_rules = false;
             let mut gen_claude = false;
             ui.horizontal(|ui| {
@@ -223,7 +224,11 @@ impl App {
                             }
                         });
                         let p: String = if t.path.starts_with("demo:") { "(traccia sintetica della demo)".into() } else { t.path.clone() };
-                        ui.label(RichText::new(p).size(10.5).color(Color32::GRAY));
+                        let ok = crate::relink::track_available(&t.path);
+                        let l = ui.label(RichText::new(p).size(10.5).color(if ok { Color32::GRAY } else { Color32::from_rgb(230, 110, 90) }));
+                        if !ok {
+                            l.on_hover_text(ts("File non trovato su questo computer: usa «Ricollega tracce»"));
+                        }
                         if ui.small_button("×").on_hover_text(ts("Togli la traccia")).clicked() {
                             remove = Some(i);
                         }
@@ -232,6 +237,13 @@ impl App {
                 });
                 if let Some(i) = remove {
                     song.tracks.remove(i);
+                }
+                if ui
+                    .button(ts("🔗 Ricollega tracce…"))
+                    .on_hover_text(ts("Indica la nuova cartella degli MP3 dopo aver spostato il progetto su un altro computer"))
+                    .clicked()
+                {
+                    relink = true;
                 }
                 ui.horizontal(|ui| {
                     ui.label(ts("Comando di Claude Code"));
@@ -264,6 +276,9 @@ impl App {
                     self.do_undo();
                     self.ed.sel = None;
                 }
+            }
+            if relink {
+                self.relink_dialog();
             }
             if analyze {
                 self.start_load(si, true);

@@ -371,7 +371,8 @@ impl App {
         let pos = self.now();
         let dur = self.cur_song().map(|s| s.duration()).unwrap_or(0.0);
         let pos = if pos >= dur - 0.05 { 0.0 } else { pos };
-        let has_tracks = self.cur_song().map(|s| !s.tracks.is_empty()).unwrap_or(false);
+        // without audio files on this computer the lights still run (silent show)
+        let has_tracks = self.cur_song().map(crate::relink::song_has_audio).unwrap_or(false);
         if self.audio_for != Some(self.song) && has_tracks {
             // audio not in memory yet (e.g. project just reopened): load it, then start
             if !self.job_running("Carico") && !self.job_running("Analisi") {
@@ -477,7 +478,7 @@ impl App {
 
     /// Play the preview between two times (listening to one part of the song).
     pub fn play_range(&mut self, from: f64, until: Option<f64>) {
-        let has_tracks = self.cur_song().map(|s| !s.tracks.is_empty()).unwrap_or(false);
+        let has_tracks = self.cur_song().map(crate::relink::song_has_audio).unwrap_or(false);
         if self.audio_for != Some(self.song) && has_tracks {
             if !self.job_running("Carico") && !self.job_running("Analisi") {
                 self.start_load(self.song, false);
@@ -668,12 +669,43 @@ impl App {
                     self.audio_for = None; self.auto_audio_tried = None; self.waves.clear();
                     self.undo.clear();
                     self.push_project();
-                    self.status = crate::i18n::t(&format!("Aperto {}", p.display()));
                     self.enter_auto_live();
+                    self.status = crate::i18n::t(&format!("Aperto {}", p.display()));
+                    let missing = self.project.songs.iter().flat_map(|s| &s.tracks).filter(|t| !crate::relink::track_available(&t.path)).count();
+                    if missing > 0 {
+                        self.status = crate::i18n::t(&format!(
+                            "Aperto {}: {} tracce audio non trovate su questo computer (le luci funzionano comunque; File ▸ Ricollega tracce…)",
+                            p.display(),
+                            missing
+                        ));
+                    }
                 }
                 Err(e) => self.status = e,
             }
         }
+    }
+
+    /// "Ricollega tracce": pick the new folder with the audio files and re-point
+    /// every track of every song to it (matching by file name and parent folders).
+    pub fn relink_dialog(&mut self) {
+        let Some(root) = rfd::FileDialog::new().set_title(ts("Scegli la cartella che contiene gli MP3 (anche con sottocartelle)")).pick_folder() else {
+            return;
+        };
+        self.stop();
+        let rep = crate::relink::relink(&mut self.project.songs, &root);
+        self.player.set_buffer(None);
+        self.audio_for = None;
+        self.auto_audio_tried = None;
+        self.waves.clear();
+        self.push_project();
+        self.status = if rep.missing == 0 {
+            crate::i18n::t(&format!("Tracce ricollegate: {} aggiornate, {} già a posto. Salva il progetto per mantenerle.", rep.relinked, rep.already_ok))
+        } else {
+            crate::i18n::t(&format!(
+                "Tracce ricollegate: {} aggiornate, {} già a posto, {} non trovate in questa cartella",
+                rep.relinked, rep.already_ok, rep.missing
+            ))
+        };
     }
 
     pub fn save(&mut self, as_new: bool) {
@@ -747,6 +779,14 @@ impl App {
                     }
                     if ui.button(ts("Salva con nome…")).clicked() {
                         self.save(true);
+                        ui.close_menu();
+                    }
+                    if ui
+                        .button(ts("Ricollega tracce…"))
+                        .on_hover_text(ts("Indica la nuova cartella degli MP3 dopo aver spostato il progetto su un altro computer"))
+                        .clicked()
+                    {
+                        self.relink_dialog();
                         ui.close_menu();
                     }
                     ui.separator();
@@ -959,7 +999,10 @@ impl eframe::App for App {
         }
         self.song = self.song.min(self.project.songs.len().saturating_sub(1));
         // keep the preview audio of the current song ready (e.g. after reopening a project)
-        let has_tracks = self.cur_song().map(|s| !s.tracks.is_empty()).unwrap_or(false);
+        // (checked only while audio is missing and not yet tried: avoids a disk stat on every frame)
+        let has_tracks = self.audio_for != Some(self.song)
+            && self.auto_audio_tried != Some(self.song)
+            && self.cur_song().map(crate::relink::song_has_audio).unwrap_or(false);
         if self.screenshot.is_none()
             && has_tracks
             && self.audio_for != Some(self.song)

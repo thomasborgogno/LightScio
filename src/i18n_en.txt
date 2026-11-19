@@ -633,4 +633,12 @@ Importa setup luci ||| Import lighting setup
 Il setup «{}» contiene {} fari. Questo progetto ne ha già {}. ||| The setup “{0}” has {1} lights. This project already has {2}.
 Sostituisci i fari attuali ||| Replace the current lights
 Aggiungi a quelli attuali ||| Add to the current ones
-Sostituendo, anche le misure del palco vengono prese dal setup. ||| When replacing, the stage size is taken from the setup too.
+Sostituendo, anche le misure del palco vengono prese dal setup. ||| When replacing, the stage size is taken from the setup too.Ricollega tracce… ||| Relink tracks…
+🔗 Ricollega tracce… ||| 🔗 Relink tracks…
+Indica la nuova cartella degli MP3 dopo aver spostato il progetto su un altro computer ||| Choose the new MP3 folder after moving the project to another computer
+Scegli la cartella che contiene gli MP3 (anche con sottocartelle) ||| Choose the folder containing the MP3 files (subfolders included)
+File non trovato su questo computer: usa «Ricollega tracce» ||| File not found on this computer: use “Relink tracks”
+Aperto {}: {} tracce audio non trovate su questo computer (le luci funzionano comunque; File ▸ Ricollega tracce…) ||| Opened {0}: {1} audio tracks not found on this computer (lights still work; File ▸ Relink tracks…)
+Tracce ricollegate: {} aggiornate, {} già a posto. Salva il progetto per mantenerle. ||| Tracks relinked: {0} updated, {1} already fine. Save the project to keep them.
+Tracce ricollegate: {} aggiornate, {} già a posto, {} non trovate in questa cartella ||| Tracks relinked: {0} updated, {1} already fine, {2} not found in this folder
+🔗 Ricollega tracce audio… ||| 🔗 Relink audio tracks…

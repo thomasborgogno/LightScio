@@ -208,6 +208,14 @@ impl App {
             } else if self.cur_song().map(|s| !s.tracks.is_empty()).unwrap_or(false) {
                 if self.job_running("Carico") || self.job_running("Analisi") {
                     ui.spinner();
+                } else if !self.cur_song().map(crate::relink::song_has_audio).unwrap_or(false) {
+                    if ui
+                        .button(ts("🔗 Ricollega tracce audio…"))
+                        .on_hover_text(ts("Indica la nuova cartella degli MP3 dopo aver spostato il progetto su un altro computer"))
+                        .clicked()
+                    {
+                        self.relink_dialog();
+                    }
                 } else if ui.button(ts("🔈 Carica audio per l'anteprima")).clicked() {
                     self.start_load(self.song, false);
                 }

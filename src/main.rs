@@ -15,6 +15,7 @@ mod midi;
 mod lanes;
 mod model;
 mod qlc;
+mod relink;
 mod stage;
 mod ui_analysis;
 mod ui_convert;
