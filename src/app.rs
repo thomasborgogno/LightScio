@@ -149,6 +149,12 @@ pub struct App {
     pub show_prefs: bool,
     pub update: crate::ui_update::UpdateState,
     pub open_url: Option<String>,
+    /// Fingerprint of the project as last saved/opened (to detect unsaved changes).
+    pub saved_hash: u64,
+    /// Close requested with unsaved changes: ask the user.
+    pub confirm_close: bool,
+    /// Skip the unsaved-changes check (app is closing for good).
+    pub force_close: bool,
 }
 
 #[derive(Clone, Copy, PartialEq, Debug)]
@@ -283,6 +289,9 @@ impl App {
             test_all: false,
             states: vec![],
             bpb_for_analysis: 4,
+            saved_hash: 0,
+            confirm_close: false,
+            force_close: false,
         };
         if let Some(a) = audio {
             app.player.set_buffer(Some(a));
@@ -355,7 +364,66 @@ impl App {
         }
         app.push_project();
         app.enter_auto_live();
+        app.mark_saved();
         app
+    }
+
+    fn project_hash(&self) -> u64 {
+        use std::hash::{Hash, Hasher};
+        let mut h = std::collections::hash_map::DefaultHasher::new();
+        serde_json::to_string(&self.project).unwrap_or_default().hash(&mut h);
+        h.finish()
+    }
+    /// The current project state is the saved one (no unsaved changes).
+    pub fn mark_saved(&mut self) {
+        self.saved_hash = self.project_hash();
+    }
+    pub fn is_dirty(&self) -> bool {
+        self.project_hash() != self.saved_hash
+    }
+
+    /// Intercept the window close: with unsaved changes ask what to do first.
+    fn handle_close(&mut self, ctx: &egui::Context) {
+        if self.screenshot.is_some() || self.force_close {
+            return;
+        }
+        if ctx.input(|i| i.viewport().close_requested()) && self.is_dirty() {
+            ctx.send_viewport_cmd(egui::ViewportCommand::CancelClose);
+            self.confirm_close = true;
+        }
+        if !self.confirm_close {
+            return;
+        }
+        let (mut save, mut discard, mut cancel) = (false, false, false);
+        egui::Window::new(ts("Modifiche non salvate"))
+            .collapsible(false)
+            .resizable(false)
+            .anchor(egui::Align2::CENTER_CENTER, [0.0, 0.0])
+            .show(ctx, |ui| {
+                ui.label(ts("Ci sono modifiche non salvate al progetto. Vuoi salvarle prima di uscire?"));
+                ui.add_space(8.0);
+                ui.horizontal(|ui| {
+                    save = ui.button(RichText::new(ts("💾 Salva ed esci")).strong()).clicked();
+                    discard = ui.button(ts("Esci senza salvare")).clicked();
+                    cancel = ui.button(ts("Annulla")).clicked();
+                });
+            });
+        if ctx.input(|i| i.key_pressed(egui::Key::Escape)) {
+            cancel = true;
+        }
+        if save {
+            self.save(false);
+            // a cancelled "save as" dialog leaves the changes unsaved: stay open
+            if !self.is_dirty() {
+                discard = true;
+            }
+        }
+        if discard {
+            self.force_close = true;
+            ctx.send_viewport_cmd(egui::ViewportCommand::Close);
+        } else if cancel {
+            self.confirm_close = false;
+        }
     }
 
     // ------------------------------------------------------------ transport
@@ -637,6 +705,7 @@ impl App {
         self.audio_for = None; self.auto_audio_tried = None; self.waves.clear();
         self.undo.clear();
         self.push_project();
+        self.mark_saved();
         self.status = ts("Nuovo progetto: aggiungi i fari (scheda Fari e palco) e i brani (scheda Brani)").into();
     }
 
@@ -653,6 +722,7 @@ impl App {
         self.waves.insert(0, pk);
         self.undo.clear();
         self.push_project();
+        self.mark_saved();
         self.status = ts("Progetto demo caricato").into();
     }
 
@@ -669,6 +739,7 @@ impl App {
                     self.audio_for = None; self.auto_audio_tried = None; self.waves.clear();
                     self.undo.clear();
                     self.push_project();
+                    self.mark_saved();
                     self.enter_auto_live();
                     self.status = crate::i18n::t(&format!("Aperto {}", p.display()));
                     let missing = self.project.songs.iter().flat_map(|s| &s.tracks).filter(|t| !crate::relink::track_available(&t.path)).count();
@@ -723,6 +794,7 @@ impl App {
                     Ok(()) => {
                         self.status = crate::i18n::t(&format!("Salvato in {}", p.display()));
                         self.path = Some(p);
+                        self.mark_saved();
                     }
                     Err(e) => self.status = crate::i18n::t(&format!("Impossibile salvare: {e}")),
                 },
@@ -986,6 +1058,7 @@ impl App {
 impl eframe::App for App {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         self.frame += 1;
+        self.handle_close(ctx);
         self.poll_jobs();
         if let Some(rx) = &self.qlc_rx {
             if let Ok(list) = rx.try_recv() {

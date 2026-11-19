@@ -642,3 +642,7 @@ Aperto {}: {} tracce audio non trovate su questo computer (le luci funzionano co
 Tracce ricollegate: {} aggiornate, {} già a posto. Salva il progetto per mantenerle. ||| Tracks relinked: {0} updated, {1} already fine. Save the project to keep them.
 Tracce ricollegate: {} aggiornate, {} già a posto, {} non trovate in questa cartella ||| Tracks relinked: {0} updated, {1} already fine, {2} not found in this folder
 🔗 Ricollega tracce audio… ||| 🔗 Relink audio tracks…
+Modifiche non salvate ||| Unsaved changes
+Ci sono modifiche non salvate al progetto. Vuoi salvarle prima di uscire? ||| The project has unsaved changes. Do you want to save them before quitting?
+💾 Salva ed esci ||| 💾 Save and quit
+Esci senza salvare ||| Quit without saving

@@ -85,6 +85,7 @@ impl App {
                             if self.path.is_some() {
                                 self.save(false);
                             }
+                            self.force_close = true;
                             ctx.send_viewport_cmd(egui::ViewportCommand::Close);
                         } else if cfg!(target_os = "macos") {
                             self.update.message = ts("Si è aperta l'immagine disco: trascina LightSciò nella cartella Applicazioni, sostituendo la versione vecchia, poi riapri l'app.").into();
