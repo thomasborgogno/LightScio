@@ -17,7 +17,6 @@ pub struct QlcEntry {
 /// Folders where QLC+ fixtures are usually found.
 pub fn default_dirs() -> Vec<PathBuf> {
     let mut v = vec![
-        PathBuf::from(r"C:\repos\apps\varie\qlcplus\resources\fixtures"),
         PathBuf::from(r"C:\QLC+\Fixtures"),
         PathBuf::from(r"C:\Program Files\QLC+\Fixtures"),
         PathBuf::from(r"C:\Program Files (x86)\QLC+\Fixtures"),
