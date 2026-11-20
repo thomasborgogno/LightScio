@@ -99,6 +99,8 @@ pub struct App {
     pub status: String,
     pub tl: Timeline,
     pub edit_def: Option<FixtureDef>,
+    /// Fixture whose data sheet is open.
+    pub info_def: Option<FixtureDef>,
     pub catalog_pick: String,
     pub add_count: u32,
     pub last_push: Instant,
@@ -117,12 +119,19 @@ pub struct App {
     pub plan_drag: Option<crate::stage::PlanDrag>,
     /// Favourite fixture models (kept across projects).
     pub favorites: Vec<FixtureDef>,
-    pub qlc: Vec<crate::qlc::QlcEntry>,
-    pub qlc_dirs: Vec<PathBuf>,
-    pub qlc_rx: Option<Receiver<Vec<crate::qlc::QlcEntry>>>,
-    pub qlc_cache: std::collections::HashMap<PathBuf, Result<Vec<FixtureDef>, String>>,
-    /// Picked QLC+ fixture and mode index.
-    pub qlc_pick: Option<(PathBuf, usize)>,
+    /// Open Fixture Library: index, installed version, background job.
+    pub ofl: Vec<crate::ofl::OflEntry>,
+    pub ofl_info: Option<crate::ofl::LibInfo>,
+    pub ofl_rx: Option<Receiver<crate::ofl::Msg>>,
+    /// What the background job is doing (Italian source text).
+    pub ofl_busy: Option<&'static str>,
+    pub ofl_error: Option<String>,
+    pub ofl_progress: Arc<Mutex<f32>>,
+    /// The last check was asked by the user (report "up to date" too).
+    pub ofl_manual: bool,
+    pub ofl_cache: std::collections::HashMap<PathBuf, Result<Vec<FixtureDef>, String>>,
+    /// Picked library fixture and mode index.
+    pub ofl_pick: Option<(PathBuf, usize)>,
     pub search: String,
     /// Stop the preview at this time (listening to one part).
     pub play_until: Option<f64>,
@@ -254,11 +263,15 @@ impl App {
             sel_set: Default::default(),
             plan_drag: None,
             favorites: vec![],
-            qlc: vec![],
-            qlc_dirs: vec![],
-            qlc_rx: None,
-            qlc_cache: Default::default(),
-            qlc_pick: None,
+            ofl: vec![],
+            ofl_info: None,
+            ofl_rx: None,
+            ofl_busy: None,
+            ofl_error: None,
+            ofl_progress: Arc::new(Mutex::new(0.0)),
+            ofl_manual: false,
+            ofl_cache: Default::default(),
+            ofl_pick: None,
             search: String::new(),
             play_until: None,
             pending_play: None,
@@ -276,6 +289,7 @@ impl App {
             update: Default::default(),
             open_url: None,
             edit_def: None,
+            info_def: None,
             catalog_pick: "head-spot-11".into(),
             add_count: 1,
             last_push: Instant::now(),
@@ -308,15 +322,9 @@ impl App {
                 apply_prefs(&cc.egui_ctx, &p);
                 app.prefs = p;
             }
-            if let Some(d) = storage.get_string("qlc_dirs").and_then(|s| serde_json::from_str::<Vec<PathBuf>>(&s).ok()) {
-                app.qlc_dirs = d.into_iter().filter(|p| p.is_dir()).collect();
-            }
-        }
-        if app.qlc_dirs.is_empty() {
-            app.qlc_dirs = crate::qlc::default_dirs();
         }
         if app.screenshot.is_none() {
-            app.start_qlc_scan();
+            app.start_ofl(if app.prefs.ofl_auto { crate::ofl::Update::IfDue } else { crate::ofl::Update::Never }, false);
             app.auto_update_check();
         }
         if app.midi_choice.is_empty() {
@@ -333,8 +341,19 @@ impl App {
                     app.stage_mode = StageMode::Plan;
                     app.sel_set = app.project.fixtures.iter().filter(|f| f.group == Group::BackWash).map(|f| f.id).collect();
                     app.sel_fixture = app.sel_set.iter().next().copied();
-                    app.qlc_dirs = crate::qlc::default_dirs();
-                    app.qlc = crate::qlc::scan(&app.qlc_dirs);
+                    if let Some(lib) = crate::ofl::lib_dir() {
+                        app.ofl_info = crate::ofl::read_info(&lib);
+                        app.ofl = crate::ofl::scan(&crate::ofl::fixtures_dir(&lib));
+                    }
+                    // optional: LUCI_INFO=<search text> opens the data sheet of that library fixture
+                    if let Ok(q) = std::env::var("LUCI_INFO") {
+                        if let Some(e) = app.ofl.iter().find(|e| e.key.contains(&q.to_lowercase())) {
+                            let path = e.path.clone();
+                            app.info_def = crate::ofl::load(&path).ok().and_then(|v| v.into_iter().next());
+                            app.ofl_pick = Some((path, 0));
+                            app.search = q;
+                        }
+                    }
                     app.search = "par".into();
                 }
                 "songs" => app.tab = Tab::Songs,
@@ -561,13 +580,52 @@ impl App {
         self.play_until = until;
     }
 
-    pub fn start_qlc_scan(&mut self) {
-        let dirs = self.qlc_dirs.clone();
-        let (tx, rx) = mpsc::channel();
-        std::thread::spawn(move || {
-            let _ = tx.send(crate::qlc::scan(&dirs));
-        });
-        self.qlc_rx = Some(rx);
+    /// Read the fixture library and, depending on `mode`, check / download a newer one.
+    pub fn start_ofl(&mut self, mode: crate::ofl::Update, manual: bool) {
+        if self.ofl_rx.is_some() {
+            return;
+        }
+        self.ofl_error = None;
+        self.ofl_manual = manual;
+        self.ofl_rx = Some(crate::ofl::spawn(mode, self.ofl_progress.clone()));
+    }
+
+    fn poll_ofl(&mut self) {
+        use crate::ofl::Msg;
+        let Some(rx) = &self.ofl_rx else { return };
+        let msgs: Vec<Msg> = rx.try_iter().collect();
+        for m in msgs {
+            match m {
+                Msg::Busy(s) => self.ofl_busy = Some(s),
+                Msg::Loaded(list, info) => {
+                    self.ofl = list;
+                    self.ofl_info = Some(info);
+                }
+                Msg::Updated(list, info) => {
+                    self.ofl = list;
+                    self.ofl_cache.clear();
+                    self.status = t(&format!("Libreria fixture aggiornata: {} modelli (versione del {}).", self.ofl.len(), info.day()));
+                    self.ofl_info = Some(info);
+                }
+                Msg::UpToDate(info) => {
+                    if self.ofl_manual {
+                        self.status = t(&format!("La libreria fixture è già aggiornata (versione del {}).", info.day()));
+                    }
+                    self.ofl_info = Some(info);
+                }
+                Msg::Failed(e) => {
+                    if self.ofl_manual {
+                        self.status = t(&format!("Libreria fixture: {e}"));
+                    }
+                    self.ofl_error = Some(e);
+                }
+                Msg::Done => {
+                    self.ofl_rx = None;
+                    self.ofl_busy = None;
+                    break;
+                }
+            }
+        }
     }
 
     // ------------------------------------------------------------ jobs
@@ -1060,12 +1118,7 @@ impl eframe::App for App {
         self.frame += 1;
         self.handle_close(ctx);
         self.poll_jobs();
-        if let Some(rx) = &self.qlc_rx {
-            if let Ok(list) = rx.try_recv() {
-                self.qlc = list;
-                self.qlc_rx = None;
-            }
-        }
+        self.poll_ofl();
         self.sync_transport();
         if self.last_push.elapsed() > Duration::from_millis(200) {
             self.push_project();
@@ -1097,6 +1150,7 @@ impl eframe::App for App {
         }
         self.ui_adapt(ctx);
         self.ui_rig_import(ctx);
+        self.ui_fixture_info(ctx);
         self.ui_prefs(ctx);
         self.poll_update(ctx);
         self.auto_live_tick();
@@ -1118,9 +1172,6 @@ impl eframe::App for App {
         }
         if let Ok(s) = serde_json::to_string(&self.favorites) {
             storage.set_string("favorites", s);
-        }
-        if let Ok(s) = serde_json::to_string(&self.qlc_dirs) {
-            storage.set_string("qlc_dirs", s);
         }
         if let Ok(s) = serde_json::to_string(&self.prefs) {
             storage.set_string("prefs", s);
@@ -1228,6 +1279,8 @@ pub struct Prefs {
     pub last_update_check: u64,
     /// "auto" (system), "it" or "en".
     pub language: String,
+    /// Check the fixture library for updates (once a day) and install them.
+    pub ofl_auto: bool,
 }
 
 impl Default for Prefs {
@@ -1240,6 +1293,7 @@ impl Default for Prefs {
             skip_version: String::new(),
             last_update_check: 0,
             language: "auto".to_string(),
+            ofl_auto: true,
         }
     }
 }

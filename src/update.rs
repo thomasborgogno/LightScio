@@ -148,26 +148,41 @@ fn curl_download(url: &str, path: &std::path::Path, total: u64, progress: &Arc<M
     }
 }
 
-/// Download the installer into the temp folder, reporting progress 0..1.
-pub fn download(info: &ReleaseInfo, progress: Arc<Mutex<f32>>) -> Result<PathBuf, String> {
-    let url = info.asset_url.clone().ok_or("nessun installer per questo sistema in questa versione")?;
-    let dir = std::env::temp_dir().join("LightScio-update");
-    std::fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
-    let name: String = info.asset_name.chars().filter(|c| c.is_ascii_alphanumeric() || matches!(c, '.' | '-' | '_')).collect();
-    let path = dir.join(if name.is_empty() { "LightScio-update".to_string() } else { name });
-    let resp = match agent().get(&url).set("User-Agent", "LightScio-update-check").call() {
+/// GET a JSON document (GitHub API), falling back to the system curl.
+pub fn get_json(url: &str) -> Result<serde_json::Value, String> {
+    let direct = agent().get(url).set("User-Agent", "LightScio-update-check").set("Accept", "application/vnd.github+json").call();
+    let v: serde_json::Value = match direct {
+        Ok(resp) => resp.into_json().map_err(|e| format!("risposta non valida: {e}"))?,
+        Err(ureq::Error::Status(403 | 429, _)) => return Err("troppe richieste a GitHub, riprova più tardi".into()),
+        Err(ureq::Error::Status(c, _)) => return Err(format!("il server ha risposto {c}")),
+        Err(ureq::Error::Transport(t)) => {
+            let text = curl_text(url).map_err(|e| format!("connessione non riuscita ({t}; {e})"))?;
+            serde_json::from_str(&text).map_err(|e| format!("risposta non valida: {e}"))?
+        }
+    };
+    if let Some(m) = v.get("message").and_then(|m| m.as_str()) {
+        // error answers of the API (e.g. rate limit) when read through curl
+        return Err(format!("GitHub: {m}"));
+    }
+    Ok(v)
+}
+
+/// Download `url` into `path`, reporting progress 0..1 (`size_hint` when the
+/// server does not send the size). Returns the number of bytes written.
+pub fn download_file(url: &str, path: &std::path::Path, size_hint: u64, progress: &Arc<Mutex<f32>>) -> Result<u64, String> {
+    let resp = match agent().get(url).set("User-Agent", "LightScio-update-check").call() {
         Ok(r) => r,
         Err(ureq::Error::Transport(_)) => {
-            curl_download(&url, &path, info.asset_size, &progress)?;
+            curl_download(url, path, size_hint, progress)?;
             if let Ok(mut p) = progress.lock() {
                 *p = 1.0;
             }
-            return Ok(path);
+            return Ok(std::fs::metadata(path).map(|m| m.len()).unwrap_or(0));
         }
         Err(e) => return Err(format!("download non riuscito: {e}")),
     };
-    let total = resp.header("Content-Length").and_then(|s| s.parse::<u64>().ok()).unwrap_or(info.asset_size).max(1);
-    let mut file = std::fs::File::create(&path).map_err(|e| e.to_string())?;
+    let total = resp.header("Content-Length").and_then(|s| s.parse::<u64>().ok()).unwrap_or(size_hint).max(1);
+    let mut file = std::fs::File::create(path).map_err(|e| e.to_string())?;
     let mut reader = resp.into_reader();
     let mut buf = vec![0u8; 64 * 1024];
     let mut done = 0u64;
@@ -179,9 +194,23 @@ pub fn download(info: &ReleaseInfo, progress: Arc<Mutex<f32>>) -> Result<PathBuf
         file.write_all(&buf[..n]).map_err(|e| e.to_string())?;
         done += n as u64;
         if let Ok(mut p) = progress.lock() {
-            *p = (done as f32 / total as f32).min(1.0);
+            *p = (done as f32 / total as f32).min(0.99);
         }
     }
+    if let Ok(mut p) = progress.lock() {
+        *p = 1.0;
+    }
+    Ok(done)
+}
+
+/// Download the installer into the temp folder, reporting progress 0..1.
+pub fn download(info: &ReleaseInfo, progress: Arc<Mutex<f32>>) -> Result<PathBuf, String> {
+    let url = info.asset_url.clone().ok_or("nessun installer per questo sistema in questa versione")?;
+    let dir = std::env::temp_dir().join("LightScio-update");
+    std::fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
+    let name: String = info.asset_name.chars().filter(|c| c.is_ascii_alphanumeric() || matches!(c, '.' | '-' | '_')).collect();
+    let path = dir.join(if name.is_empty() { "LightScio-update".to_string() } else { name });
+    let done = download_file(&url, &path, info.asset_size, &progress)?;
     if done < 1024 {
         return Err("file scaricato non valido".into());
     }

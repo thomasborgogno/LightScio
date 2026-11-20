@@ -21,7 +21,7 @@ cpal = "0.15"
 midir = "0.10"
 serialport = { version = "4", default-features = false }
 rfd = "0.15"
-roxmltree = "0.20"
+zip = { version = "2", default-features = false, features = ["deflate"] }
 sys-locale = "0.3"
 ureq = { version = "2", default-features = false, features = ["tls", "json"] }
 image = { version = "0.25", default-features = false, features = ["png"] }

@@ -87,10 +87,13 @@ pub struct ChannelDef {
     pub kind: ChannelKind,
     #[serde(default)]
     pub default: u8,
+    /// What the channel does over its DMX range (from the fixture library).
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub caps: Vec<CapInfo>,
 }
 
 pub fn ch(name: &str, kind: ChannelKind, default: u8) -> ChannelDef {
-    ChannelDef { name: crate::i18n::t(name), kind, default }
+    ChannelDef { name: crate::i18n::t(name), kind, default, caps: vec![] }
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Debug, Hash)]
@@ -165,6 +168,95 @@ pub struct FixtureDef {
     pub strobe_max: u8,
     #[serde(default)]
     pub custom: bool,
+    /// Wheels (colours, gobos, …) with their slots (from the fixture library).
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub wheels: Vec<WheelInfo>,
+    /// Data sheet: manufacturer, physical data, links, source (from the fixture library).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub info: Option<Box<FixtureInfo>>,
+}
+
+/// One function of a channel over a DMX range.
+#[derive(Clone, Serialize, Deserialize, Debug, PartialEq, Default)]
+pub struct CapInfo {
+    pub start: u8,
+    pub end: u8,
+    /// Function type as named by the Open Fixture Library ("ShutterStrobe", "WheelSlot", …).
+    pub typ: String,
+    /// What exactly: shutter effect, colour, wheel slot, effect name, …
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub what: String,
+    /// Values over the range, e.g. "1Hz → 12Hz", "0° → 540°".
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub values: String,
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub comment: String,
+    /// Colours shown by this range (colour presets, colour wheel slots).
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub colors: Vec<[u8; 3]>,
+}
+
+#[derive(Clone, Serialize, Deserialize, Debug, PartialEq, Default)]
+pub struct WheelInfo {
+    pub name: String,
+    pub slots: Vec<SlotInfo>,
+}
+
+#[derive(Clone, Serialize, Deserialize, Debug, PartialEq, Default)]
+pub struct SlotInfo {
+    /// "Open", "Color", "Gobo", "Prism", …
+    pub typ: String,
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub name: String,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub colors: Vec<[u8; 3]>,
+    /// Extra data (colour temperature, prism facets, gobo resource, …).
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub detail: String,
+}
+
+/// Data sheet of a library fixture, for the given DMX mode.
+#[derive(Clone, Serialize, Deserialize, Debug, PartialEq, Default)]
+#[serde(default)]
+pub struct FixtureInfo {
+    /// e.g. "Open Fixture Library"
+    pub library: String,
+    /// Library key, e.g. "clay-paky/sharpy".
+    pub key: String,
+    /// Library version (commit) the data comes from.
+    pub version: String,
+    pub manufacturer: String,
+    pub model: String,
+    pub short_name: String,
+    pub categories: Vec<String>,
+    pub mode: String,
+    pub mode_short: String,
+    pub comment: String,
+    /// Width, height, depth in mm.
+    pub dimensions: Option<[f32; 3]>,
+    /// kg
+    pub weight: Option<f32>,
+    /// W
+    pub power: Option<f32>,
+    pub dmx_connector: String,
+    pub bulb: String,
+    /// K
+    pub color_temperature: Option<f32>,
+    pub lumens: Option<f32>,
+    pub lens: String,
+    /// Beam angle range in degrees.
+    pub lens_degrees: Option<[f32; 2]>,
+    pub focus_type: String,
+    /// Pan / tilt range as written by the library ("540°", "infinito").
+    pub pan_max: String,
+    pub tilt_max: String,
+    /// Pixel matrix (x, y, z) for LED bars / matrices.
+    pub matrix: Option<[u32; 3]>,
+    /// (kind, url): manual, product page, video, …
+    pub links: Vec<(String, String)>,
+    pub authors: Vec<String>,
+    pub created: String,
+    pub modified: String,
 }
 
 fn d540() -> f32 {

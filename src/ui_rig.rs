@@ -1,4 +1,4 @@
-//! "Fari e palco" tab: fixture catalog (generic, favourites, QLC+ library),
+//! "Fari e palco" tab: fixture catalog (generic, favourites, Open Fixture Library),
 //! custom fixtures, patch, placement and multi-selection editing.
 
 use crate::app::*;
@@ -23,10 +23,10 @@ impl App {
         v
     }
 
-    /// The fixture model currently picked in the catalog (generic, favourite or QLC+).
+    /// The fixture model currently picked in the catalog (generic, favourite or library).
     fn picked_def(&mut self) -> Option<FixtureDef> {
-        if let Some((path, mode)) = self.qlc_pick.clone() {
-            let entry = self.qlc_cache.entry(path.clone()).or_insert_with(|| crate::qlc::load(&path));
+        if let Some((path, mode)) = self.ofl_pick.clone() {
+            let entry = self.ofl_cache.entry(path.clone()).or_insert_with(|| crate::ofl::load(&path));
             return entry.as_ref().ok().and_then(|v| v.get(mode).or(v.first()).cloned());
         }
         self.all_defs().into_iter().find(|d| d.id == self.catalog_pick)
@@ -62,7 +62,7 @@ impl App {
     }
 
     fn add_fixtures(&mut self, def: FixtureDef, count: u32) {
-        // models coming from favourites / QLC+ are copied into the project
+        // models coming from favourites / the library are copied into the project
         if !self.catalog.iter().any(|d| d.id == def.id) {
             if let Some(x) = self.project.custom_defs.iter_mut().find(|d| d.id == def.id) {
                 *x = def.clone();
@@ -140,14 +140,14 @@ impl App {
         };
         let defs = self.all_defs();
         let mut pick_def: Option<String> = None;
-        let mut pick_qlc: Option<std::path::PathBuf> = None;
+        let mut pick_ofl: Option<std::path::PathBuf> = None;
         egui::ScrollArea::vertical().max_height(ui.available_height() * 0.5).id_salt("cat_list").auto_shrink([false, false]).show(ui, |ui| {
             let fav_ids: Vec<String> = self.favorites.iter().map(|f| f.id.clone()).collect();
             let favs: Vec<&FixtureDef> = self.favorites.iter().filter(|d| matches(&d.name)).collect();
             if !favs.is_empty() {
                 ui.label(RichText::new(ts("★ Preferiti")).strong().color(Color32::from_rgb(255, 210, 80)));
                 for d in favs {
-                    let sel = self.qlc_pick.is_none() && self.catalog_pick == d.id;
+                    let sel = self.ofl_pick.is_none() && self.catalog_pick == d.id;
                     if ui.selectable_label(sel, crate::i18n::t(&format!("★ {} · {} can.", d.name, d.channels.len()))).clicked() {
                         pick_def = Some(d.id.clone());
                     }
@@ -158,7 +158,7 @@ impl App {
             if !mine.is_empty() {
                 ui.label(RichText::new(ts("Nel progetto")).strong().color(Color32::from_rgb(255, 200, 100)));
                 for d in mine {
-                    let sel = self.qlc_pick.is_none() && self.catalog_pick == d.id;
+                    let sel = self.ofl_pick.is_none() && self.catalog_pick == d.id;
                     if ui.selectable_label(sel, crate::i18n::t(&format!("{} · {} can.", d.name, d.channels.len()))).clicked() {
                         pick_def = Some(d.id.clone());
                     }
@@ -172,29 +172,31 @@ impl App {
                 }
                 ui.label(RichText::new(crate::i18n::t(&format!("Generici · {}", kind.label()))).strong().color(Color32::from_rgb(200, 170, 110)));
                 for d in items {
-                    let sel = self.qlc_pick.is_none() && self.catalog_pick == d.id;
+                    let sel = self.ofl_pick.is_none() && self.catalog_pick == d.id;
                     if ui.selectable_label(sel, crate::i18n::t(&format!("{} · {} can.", d.name, d.channels.len()))).clicked() {
                         pick_def = Some(d.id.clone());
                     }
                 }
             }
             ui.separator();
-            if self.qlc_rx.is_some() {
-                ui.horizontal(|ui| {
-                    ui.spinner();
-                    ui.label(ts("Leggo la libreria QLC+…"));
-                });
-            } else if self.qlc.is_empty() {
-                ui.label(RichText::new(ts("Libreria QLC+ non trovata: indica la cartella qui sotto.")).color(Color32::GRAY));
+            if self.ofl.is_empty() {
+                if let Some(b) = self.ofl_busy {
+                    ui.horizontal(|ui| {
+                        ui.spinner();
+                        ui.label(ts(b));
+                    });
+                } else {
+                    ui.label(RichText::new(ts("Libreria fixture non ancora scaricata: vedi «Libreria fixture» qui sotto.")).color(Color32::GRAY));
+                }
             } else if words.is_empty() {
-                ui.label(RichText::new(crate::i18n::t(&format!("Libreria QLC+: {} modelli. Scrivi nella ricerca per trovarli.", self.qlc.len()))).color(Color32::GRAY));
+                ui.label(RichText::new(crate::i18n::t(&format!("Libreria fixture: {} modelli. Scrivi nella ricerca per trovarli.", self.ofl.len()))).color(Color32::GRAY));
             } else {
-                let found: Vec<&crate::qlc::QlcEntry> = self.qlc.iter().filter(|e| words.iter().all(|w| e.key.contains(w))).collect();
-                ui.label(RichText::new(crate::i18n::t(&format!("Libreria QLC+ · {} risultati", found.len()))).strong().color(Color32::from_rgb(120, 190, 255)));
+                let found: Vec<&crate::ofl::OflEntry> = self.ofl.iter().filter(|e| words.iter().all(|w| e.key.contains(w))).collect();
+                ui.label(RichText::new(crate::i18n::t(&format!("Libreria fixture · {} risultati", found.len()))).strong().color(Color32::from_rgb(120, 190, 255)));
                 for e in found.iter().take(MAX_RESULTS) {
-                    let sel = self.qlc_pick.as_ref().map(|(p, _)| p == &e.path).unwrap_or(false);
+                    let sel = self.ofl_pick.as_ref().map(|(p, _)| p == &e.path).unwrap_or(false);
                     if ui.selectable_label(sel, format!("{} — {}  ({})", e.manufacturer, e.model, e.kind)).clicked() {
-                        pick_qlc = Some(e.path.clone());
+                        pick_ofl = Some(e.path.clone());
                     }
                 }
                 if found.len() > MAX_RESULTS {
@@ -204,20 +206,20 @@ impl App {
         });
         if let Some(id) = pick_def {
             self.catalog_pick = id;
-            self.qlc_pick = None;
+            self.ofl_pick = None;
         }
-        if let Some(p) = pick_qlc {
-            self.qlc_pick = Some((p, 0));
+        if let Some(p) = pick_ofl {
+            self.ofl_pick = Some((p, 0));
         }
         ui.separator();
 
         // details of the picked model
-        if let Some((path, mode)) = self.qlc_pick.clone() {
-            let res = self.qlc_cache.entry(path.clone()).or_insert_with(|| crate::qlc::load(&path)).clone();
+        if let Some((path, mode)) = self.ofl_pick.clone() {
+            let res = self.ofl_cache.entry(path.clone()).or_insert_with(|| crate::ofl::load(&path)).clone();
             match res {
                 Ok(modes) if modes.len() > 1 => {
                     let mut m = mode.min(modes.len() - 1);
-                    egui::ComboBox::from_id_salt("qlc_mode")
+                    egui::ComboBox::from_id_salt("ofl_mode")
                         .width(280.0)
                         .selected_text(crate::i18n::t(&format!("Modo: {} ({} can.)", modes[m].name.rsplit("— ").next().unwrap_or(""), modes[m].channels.len())))
                         .show_ui(ui, |ui| {
@@ -225,7 +227,7 @@ impl App {
                                 ui.selectable_value(&mut m, i, crate::i18n::t(&format!("{} ({} canali)", d.name.rsplit("— ").next().unwrap_or(""), d.channels.len())));
                             }
                         });
-                    self.qlc_pick = Some((path, m));
+                    self.ofl_pick = Some((path, m));
                 }
                 Ok(_) => {}
                 Err(e) => {
@@ -236,11 +238,7 @@ impl App {
         if let Some(d) = self.picked_def() {
             ui.label(RichText::new(&d.name).strong());
             ui.label(RichText::new(format!("{} · {}", d.kind.label(), d.capabilities())).size(11.0));
-            egui::ScrollArea::vertical().max_height(110.0).id_salt("ch_list").show(ui, |ui| {
-                for (i, c) in d.channels.iter().enumerate() {
-                    ui.label(RichText::new(format!("{:>2}. {} — {}", i + 1, c.name, c.kind.label())).monospace().size(10.5));
-                }
-            });
+            egui::ScrollArea::vertical().max_height(200.0).id_salt("ch_list").show(ui, |ui| crate::ui_fixture_info::channels_ui(ui, "cat_ch", &d));
             ui.horizontal(|ui| {
                 ui.label(ts("Quanti"));
                 ui.add(egui::DragValue::new(&mut self.add_count).range(1..=24));
@@ -257,6 +255,9 @@ impl App {
                     } else {
                         self.favorites.push(d.clone());
                     }
+                }
+                if ui.button(ts("ℹ Scheda")).on_hover_text(ts("Dati del faro: dimensioni, peso, potenza, canali, ruote, link")).clicked() {
+                    self.info_def = Some(d.clone());
                 }
                 if ui.button(ts("✏ Duplica e modifica")).clicked() {
                     let mut nd = d.clone();
@@ -294,35 +295,50 @@ impl App {
                 strobe_min: 10,
                 strobe_max: 250,
                 custom: true,
+                wheels: vec![],
+        info: None,
             });
         }
-        egui::CollapsingHeader::new(ts("Libreria QLC+")).id_salt("qlc_dirs").show(ui, |ui| {
-            ui.label(RichText::new(ts("Cartelle con i file .qxf (anche la cartella di QLC+ intera).")).size(11.0).color(Color32::GRAY));
-            let mut remove = None;
-            for (i, d) in self.qlc_dirs.iter().enumerate() {
-                ui.horizontal(|ui| {
-                    ui.label(RichText::new(d.display().to_string()).size(10.5));
-                    if ui.small_button("×").clicked() {
-                        remove = Some(i);
-                    }
-                });
-            }
-            if let Some(i) = remove {
-                self.qlc_dirs.remove(i);
-            }
-            ui.horizontal(|ui| {
-                if ui.button(ts("📁 Aggiungi cartella…")).clicked() {
-                    if let Some(p) = rfd::FileDialog::new().pick_folder() {
-                        self.qlc_dirs.push(p);
-                        self.start_qlc_scan();
-                    }
-                }
-                if ui.button(ts("⟳ Rileggi")).clicked() {
-                    self.qlc_cache.clear();
-                    self.start_qlc_scan();
-                }
-            });
+        let open_lib = self.ofl_info.is_none() && self.ofl_rx.is_none();
+        egui::CollapsingHeader::new(ts("Libreria fixture")).id_salt("ofl_lib").default_open(open_lib).show(ui, |ui| self.ofl_panel(ui));
+    }
+
+    /// Version, download and update of the Open Fixture Library.
+    fn ofl_panel(&mut self, ui: &mut egui::Ui) {
+        ui.horizontal_wrapped(|ui| {
+            ui.spacing_mut().item_spacing.x = 0.0;
+            ui.label(RichText::new(ts("Modelli dalla ")).size(11.0).color(Color32::GRAY));
+            ui.hyperlink_to(RichText::new("Open Fixture Library").size(11.0), crate::ofl::SITE);
+            ui.label(RichText::new(ts(", scaricati da Internet e aggiornati dall'app.")).size(11.0).color(Color32::GRAY));
         });
+        match &self.ofl_info {
+            Some(i) => {
+                ui.label(RichText::new(crate::i18n::t(&format!("Versione del {} ({}) · {} modelli", i.day(), i.short(), self.ofl.len()))).size(11.5));
+            }
+            None => {
+                ui.label(RichText::new(ts("Non ancora scaricata (circa 4 MB).")).size(11.5));
+            }
+        }
+        if let Some(b) = self.ofl_busy {
+            ui.horizontal(|ui| {
+                ui.spinner();
+                ui.label(RichText::new(ts(b)).size(11.0));
+            });
+            if b.starts_with("Scarico") {
+                let p = self.ofl_progress.lock().map(|p| *p).unwrap_or(0.0);
+                ui.add(egui::ProgressBar::new(p).desired_width(220.0).show_percentage());
+            }
+        } else if let Some(e) = &self.ofl_error {
+            ui.label(RichText::new(crate::i18n::t(&format!("Aggiornamento non riuscito: {e}"))).size(11.0).color(Color32::from_rgb(255, 140, 80)));
+        }
+        ui.horizontal(|ui| {
+            let busy = self.ofl_rx.is_some();
+            let label = if self.ofl_info.is_none() { ts("⬇ Scarica libreria") } else { ts("⟳ Controlla aggiornamenti") };
+            if ui.add_enabled(!busy, egui::Button::new(label)).clicked() {
+                self.start_ofl(crate::ofl::Update::Now, true);
+            }
+        });
+        ui.checkbox(&mut self.prefs.ofl_auto, ts("Aggiorna automaticamente (controllo una volta al giorno)"));
     }
 
     pub fn ui_rig(&mut self, ctx: &egui::Context) {
@@ -490,6 +506,7 @@ impl App {
         let mut delete = false;
         let mut duplicate = false;
         let mut identify = false;
+        let mut show_info = None;
         {
             let f = &mut self.project.fixtures[idx];
             let def = defs.iter().find(|d| d.id == f.def_id);
@@ -552,6 +569,9 @@ impl App {
                 if ui.button(ts("💡 Identifica")).on_hover_text(ts("Accende solo questo faro per 3 secondi (anche sull'uscita DMX)")).clicked() {
                     identify = true;
                 }
+                if ui.add_enabled(def.is_some(), egui::Button::new(ts("ℹ Scheda"))).on_hover_text(ts("Dati del faro: dimensioni, peso, potenza, canali, ruote, link")).clicked() {
+                    show_info = def.cloned();
+                }
                 if ui.button(ts("⧉ Duplica")).clicked() {
                     duplicate = true;
                 }
@@ -559,6 +579,9 @@ impl App {
                     delete = true;
                 }
             });
+        }
+        if show_info.is_some() {
+            self.info_def = show_info;
         }
         if identify {
             if let Ok(mut s) = self.shared.lock() {
@@ -869,7 +892,7 @@ impl App {
                 *f = d.clone();
             }
             self.catalog_pick = d.id.clone();
-            self.qlc_pick = None;
+            self.ofl_pick = None;
             self.status = crate::i18n::t(&format!("Modello «{}» salvato nel progetto", d.name));
             return;
         }

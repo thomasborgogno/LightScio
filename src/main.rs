@@ -14,11 +14,12 @@ mod live;
 mod midi;
 mod lanes;
 mod model;
-mod qlc;
+mod ofl;
 mod relink;
 mod stage;
 mod ui_analysis;
 mod ui_convert;
+mod ui_fixture_info;
 mod ui_live;
 mod ui_rig;
 mod ui_show;
@@ -44,16 +45,28 @@ fn main() -> eframe::Result<()> {
         }
         return Ok(());
     }
-    if args.iter().any(|a| a == "--test-qlc") {
-        let list = qlc::scan(&qlc::default_dirs());
-        let (mut ok, mut modes, mut err) = (0, 0, 0);
+    if let Some(i) = args.iter().position(|a| a == "--test-ofl") {
+        // optional argument: a folder with the OFL fixtures (default: the downloaded library)
+        let dir = args.get(i + 1).map(PathBuf::from).or_else(|| ofl::lib_dir().map(|d| ofl::fixtures_dir(&d)));
+        let Some(dir) = dir.filter(|d| d.is_dir()) else {
+            println!("libreria OFL non trovata (avvia l'app per scaricarla, o indica la cartella fixtures)");
+            return Ok(());
+        };
+        let list = ofl::scan(&dir);
+        let (mut ok, mut modes, mut err, mut missing) = (0, 0, 0, 0);
         let mut kinds = std::collections::BTreeMap::new();
         for e in &list {
-            match qlc::load(&e.path) {
-                Ok(v) => {
+            match ofl::load_report(&e.path) {
+                Ok((v, miss)) => {
                     ok += 1;
                     modes += v.len();
                     *kinds.entry(format!("{:?}", v[0].kind)).or_insert(0) += 1;
+                    if !miss.is_empty() {
+                        missing += 1;
+                        if missing <= 10 {
+                            println!("MISSING {}: {:?}", e.path.display(), miss.iter().take(4).collect::<Vec<_>>());
+                        }
+                    }
                 }
                 Err(x) => {
                     err += 1;
@@ -63,10 +76,10 @@ fn main() -> eframe::Result<()> {
                 }
             }
         }
-        println!("indexed {} parsed {ok} modes {modes} errors {err} kinds {kinds:?}", list.len());
-        for q in ["dotz par", "dotline180"] {
+        println!("indexed {} parsed {ok} modes {modes} errors {err} with-missing-channels {missing} kinds {kinds:?}", list.len());
+        for q in ["dotz par", "sharpy"] {
             if let Some(e) = list.iter().find(|e| e.key.contains(q)) {
-                for d in qlc::load(&e.path).unwrap_or_default().iter().take(2) {
+                for d in ofl::load(&e.path).unwrap_or_default().iter().take(2) {
                     println!("{} [{:?}] open={} strobe={}-{} wheel={}", d.name, d.kind, d.shutter_open, d.strobe_min, d.strobe_max, d.color_wheel.len());
                     println!("   {:?}", d.channels.iter().map(|c| format!("{}:{:?}={}", c.name, c.kind, c.default)).collect::<Vec<_>>());
                 }
@@ -126,7 +139,7 @@ fn main() -> eframe::Result<()> {
 }
 
 
-const APP_NAME: &str = "LightSciò";
+pub const APP_NAME: &str = "LightSciò";
 
 /// Window / taskbar icon.
 fn app_icon() -> Option<egui::IconData> {

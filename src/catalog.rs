@@ -34,6 +34,8 @@ fn def(id: &str, name: &str, kind: FixtureKind, channels: Vec<ChannelDef>, beam:
         strobe_min: 10,
         strobe_max: 250,
         custom: false,
+        wheels: vec![],
+        info: None,
     }
 }
 

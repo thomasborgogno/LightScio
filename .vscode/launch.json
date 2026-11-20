@@ -1,0 +1,75 @@
+{
+    // Debug of LightSciò with the MSVC toolchain (needs the "C/C++" extension, ms-vscode.cpptools).
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "LightSciò (debug)",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/target/debug/lightscio.exe",
+            "args": [],
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal",
+            "environment": [{ "name": "RUST_BACKTRACE", "value": "1" }],
+            "preLaunchTask": "cargo build"
+        },
+        {
+            "name": "LightSciò (release)",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/target/release/lightscio.exe",
+            "args": [],
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal",
+            "preLaunchTask": "cargo build --release"
+        },
+        {
+            "name": "LightSciò: apri un progetto…",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/target/debug/lightscio.exe",
+            "args": ["${input:luciFile}"],
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal",
+            "environment": [{ "name": "RUST_BACKTRACE", "value": "1" }],
+            "preLaunchTask": "cargo build"
+        },
+        {
+            "name": "Test libreria OFL (--test-ofl)",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/target/debug/lightscio.exe",
+            "args": ["--test-ofl"],
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal",
+            "preLaunchTask": "cargo build"
+        },
+        {
+            "name": "Screenshot scheda faro (rig + LUCI_INFO)",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/target/debug/lightscio.exe",
+            "args": ["--screenshot", "${workspaceFolder}/shots/rig.png"],
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal",
+            "environment": [
+                { "name": "LUCI_TAB", "value": "rig" },
+                { "name": "LUCI_INFO", "value": "${input:fixtureSearch}" }
+            ],
+            "preLaunchTask": "cargo build"
+        }
+    ],
+    "inputs": [
+        {
+            "id": "luciFile",
+            "type": "promptString",
+            "description": "Percorso del file .luci da aprire"
+        },
+        {
+            "id": "fixtureSearch",
+            "type": "promptString",
+            "description": "Testo da cercare nella libreria fixture",
+            "default": "sharpy"
+        }
+    ]
+}

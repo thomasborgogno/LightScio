@@ -12,7 +12,7 @@ LightSciò is a desktop app for Windows and macOS, written in Rust with [egui](h
 
 ## How it works
 
-1. **Lights and stage** — pick your fixtures from a built-in set of generic profiles or from the QLC+ fixture library (search, favourites), or define custom fixtures channel by channel. Place them on a top-down stage plan (multi-selection, box selection, align / distribute / mirror), patch DMX addresses, and see the rig in a 2.5D view from the audience.
+1. **Lights and stage** — pick your fixtures from a built-in set of generic profiles or from the Open Fixture Library, downloaded and kept up to date automatically (search, favourites), or define custom fixtures channel by channel. Place them on a top-down stage plan (multi-selection, box selection, align / distribute / mirror), patch DMX addresses, and see the rig in a 2.5D view from the audience.
 2. **Songs and analysis** — load the separate stems of each song (MP3, WAV, FLAC, OGG). LightSciò analyses them:
    - tempo and first downbeat (a click track, if present, gives the exact tempo);
    - song parts: intro, verse, pre-chorus, chorus, bridge, solo, breaks, ending;
@@ -134,7 +134,7 @@ Command-line options:
 
 - `--screenshot <file.png>` — start, render about 120 frames, save a picture of the window and exit (used for automated checks).
 - `--dump-demo` — print the analysis of the built-in synthetic demo song.
-- `--test-qlc` — parse every QLC+ fixture found and print a summary.
+- `--test-ofl [folder]` — convert every fixture of the downloaded Open Fixture Library (or of the given `fixtures` folder) and print a summary.
 - `--version` — print the version.
 - `--check-update [owner/repo]` — check GitHub for a newer release and print the result.
 - `<file.luci>` — open that show (used by the Windows file association).
@@ -147,15 +147,15 @@ Command-line options:
 
 ## Fixture library: credits
 
-The fixture library comes from **[QLC+](https://www.qlcplus.org)** (Q Light Controller Plus) and its contributors. QLC+ and its fixture definitions are released under the Apache License 2.0.
+The fixture library comes from the **[Open Fixture Library](https://open-fixture-library.org)** (OFL) and its contributors. The OFL project is released under the MIT License.
 
-LightSciò does **not** bundle the QLC+ fixtures: it reads the `.qxf` files from a QLC+ installation or a QLC+ source folder on your computer, chosen in the catalog panel. A fixture you add to a show is copied into the project file. Many thanks to the QLC+ team and to everyone who contributed fixture definitions.
+LightSciò does **not** bundle the OFL fixtures. On first start it downloads the fixture files (about 4 MB) from the [OFL GitHub repository](https://github.com/OpenLightingProject/open-fixture-library) into the app data folder. It records which repository commit they come from and, once a day, checks whether there is a newer one and installs it (this can be turned off in the "Fixture library" section of the catalog). A fixture you add to a show is copied into the project file, so shows keep working even if the library changes. Many thanks to the OFL team and to everyone who contributed fixture definitions.
 
 The built-in generic profiles are approximations of common channel layouts; always check them against your fixture's manual.
 
 ## Other open-source components
 
-[egui / eframe](https://github.com/emilk/egui), [symphonia](https://github.com/pdeljanov/Symphonia), [cpal](https://github.com/RustAudio/cpal), [midir](https://github.com/Boddlnagg/midir), [serialport-rs](https://github.com/serialport/serialport-rs), [RustFFT](https://github.com/ejmahler/RustFFT), [ureq](https://github.com/algesten/ureq), [sys-locale](https://github.com/1Password/sys-locale), [roxmltree](https://github.com/RazrFalcon/roxmltree), [rfd](https://github.com/PolyMeilex/rfd), [serde](https://serde.rs), [image](https://github.com/image-rs/image). Each is under its own license (MIT and/or Apache-2.0). The Windows installer is built with [Inno Setup](https://jrsoftware.org/isinfo.php).
+[egui / eframe](https://github.com/emilk/egui), [symphonia](https://github.com/pdeljanov/Symphonia), [cpal](https://github.com/RustAudio/cpal), [midir](https://github.com/Boddlnagg/midir), [serialport-rs](https://github.com/serialport/serialport-rs), [RustFFT](https://github.com/ejmahler/RustFFT), [ureq](https://github.com/algesten/ureq), [sys-locale](https://github.com/1Password/sys-locale), [zip](https://github.com/zip-rs/zip2), [rfd](https://github.com/PolyMeilex/rfd), [serde](https://serde.rs), [image](https://github.com/image-rs/image). Each is under its own license (MIT and/or Apache-2.0). The Windows installer is built with [Inno Setup](https://jrsoftware.org/isinfo.php).
 
 ## Limitations
 

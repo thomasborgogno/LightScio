@@ -163,8 +163,6 @@ Catalogo fari ||| Fixture catalog
 🔍 Cerca marca o modello… ||| 🔍 Search brand or model…
 ★ Preferiti ||| ★ Favourites
 Nel progetto ||| In this project
-Leggo la libreria QLC+… ||| Reading the QLC+ library…
-Libreria QLC+ non trovata: indica la cartella qui sotto. ||| QLC+ library not found: choose its folder below.
 Quanti ||| How many
 ➕ Aggiungi al palco ||| ➕ Add to stage
 ★ Togli dai preferiti ||| ★ Remove from favourites
@@ -173,10 +171,6 @@ Quanti ||| How many
 Togli il modello dal progetto (solo se non usato) ||| Remove the model from the project (only if unused)
 ✏ Nuovo faro personalizzato… ||| ✏ New custom fixture…
 Il mio faro ||| My fixture
-Libreria QLC+ ||| QLC+ library
-Cartelle con i file .qxf (anche la cartella di QLC+ intera). ||| Folders with .qxf files (the whole QLC+ folder works too).
-📁 Aggiungi cartella… ||| 📁 Add folder…
-⟳ Rileggi ||| ⟳ Reload
 🗺 Pianta (trascina i fari) ||| 🗺 Plan (drag the lights)
 🎭 Vista dal pubblico ||| 🎭 Audience view
 Palco ||| Stage
@@ -240,8 +234,6 @@ Aggiunti {} × {} ||| Added {0} × {1}
 {} esce dall'universo DMX (1-512) ||| {0} goes outside the DMX universe (1-512)
 {} e {} si sovrappongono ||| {0} and {1} overlap
 Generici · {} ||| Generic · {0}
-Libreria QLC+: {} modelli. Scrivi nella ricerca per trovarli. ||| QLC+ library: {0} models. Type in the search box to find them.
-Libreria QLC+ · {} risultati ||| QLC+ library · {0} results
 …e altri {}: affina la ricerca ||| …and {0} more: refine the search
 Modo: {} ({} can.) ||| Mode: {0} ({1} ch.)
 {} ({} canali) ||| {0} ({1} channels)
@@ -646,3 +638,91 @@ Modifiche non salvate ||| Unsaved changes
 Ci sono modifiche non salvate al progetto. Vuoi salvarle prima di uscire? ||| The project has unsaved changes. Do you want to save them before quitting?
 💾 Salva ed esci ||| 💾 Save and quit
 Esci senza salvare ||| Quit without saving
+Leggo la libreria delle fixture… ||| Reading the fixture library…
+Controllo se la libreria è aggiornata… ||| Checking whether the library is up to date…
+Scarico la libreria delle fixture… ||| Downloading the fixture library…
+Libreria fixture aggiornata: {} modelli (versione del {}). ||| Fixture library updated: {0} models (version of {1}).
+La libreria fixture è già aggiornata (versione del {}). ||| The fixture library is already up to date (version of {0}).
+Libreria fixture: {} ||| Fixture library: {0}
+Libreria fixture non ancora scaricata: vedi «Libreria fixture» qui sotto. ||| Fixture library not downloaded yet: see “Fixture library” below.
+Libreria fixture: {} modelli. Scrivi nella ricerca per trovarli. ||| Fixture library: {0} models. Type in the search box to find them.
+Libreria fixture · {} risultati ||| Fixture library · {0} results
+Libreria fixture ||| Fixture library
+Modelli dalla  ||| Models from the 
+, scaricati da Internet e aggiornati dall'app. ||| , downloaded from the Internet and kept up to date by the app.
+Versione del {} ({}) · {} modelli ||| Version of {0} ({1}) · {2} models
+Non ancora scaricata (circa 4 MB). ||| Not downloaded yet (about 4 MB).
+Aggiornamento non riuscito: {} ||| Update failed: {0}
+⬇ Scarica libreria ||| ⬇ Download library
+⟳ Controlla aggiornamenti ||| ⟳ Check for updates
+Aggiorna automaticamente (controllo una volta al giorno) ||| Update automatically (checked once a day)
+Nessuna funzione ||| No function
+Durata strobo ||| Strobe duration
+Intensità colore ||| Colour intensity
+Colore preimpostato ||| Colour preset
+Temperatura colore ||| Colour temperature
+Pan continuo ||| Continuous pan
+Tilt continuo ||| Continuous tilt
+Ruota ||| Wheel
+Scuotimento ruota ||| Wheel shake
+Rotazione slot ||| Slot rotation
+Rotazione ruota ||| Wheel rotation
+Velocità effetto ||| Effect speed
+Durata effetto ||| Effect duration
+Parametro effetto ||| Effect parameter
+Sensibilità al suono ||| Sound sensitivity
+Angolo fascio ||| Beam angle
+Posizione fascio ||| Beam position
+Iride ||| Iris
+Effetto iride ||| Iris effect
+Effetto frost ||| Frost effect
+Lama ||| Blade
+Rotazione lama ||| Blade rotation
+Rotazione sistema lame ||| Blade system rotation
+Fumo ||| Fog
+Uscita fumo ||| Fog output
+Tipo di fumo ||| Fog type
+Manutenzione ||| Maintenance
+Generico ||| Generic
+aperto ||| open
+chiuso ||| closed
+impulso ||| pulse
+rampa su ||| ramp up
+rampa giù ||| ramp down
+rampa su/giù ||| ramp up/down
+lampi ||| lightning
+picchi ||| spikes
+raffica ||| burst
+colore ||| colour
+iride ||| iris
+gobo animato (inizio) ||| animation gobo (start)
+gobo animato (fine) ||| animation gobo (end)
+Regolazione fine di {} ||| Fine adjustment of {0}
+Manuale ||| Manual
+Pagina del prodotto ||| Product page
+ℹ Scheda faro ||| ℹ Fixture data sheet
+Modo DMX: {} · {} canali ||| DMX mode: {0} · {1} channels
+{} canali ||| {0} channels
+Dimensioni (L × A × P) ||| Size (W × H × D)
+Peso ||| Weight
+Potenza ||| Power
+Connettore DMX ||| DMX connector
+Sorgente luminosa ||| Light source
+Flusso luminoso ||| Luminous flux
+Ottica ||| Lens
+Escursione pan ||| Pan range
+Escursione tilt ||| Tilt range
+Matrice di pixel ||| Pixel matrix
+Dati fisici ||| Physical data
+Canali DMX ||| DMX channels
+Apri un canale per vedere cosa fa ogni intervallo di valori. ||| Open a channel to see what each value range does.
+Ruote ||| Wheels
+{} · {} slot ||| {0} · {1} slots
+Link ||| Links
+Fonte: ||| Source:
+versione {} ||| version {0}
+Autori: {} ||| Authors: {0}
+creata il {} ||| created {0}
+modificata il {} ||| modified {0}
+ℹ Scheda ||| ℹ Data sheet
+Dati del faro: dimensioni, peso, potenza, canali, ruote, link ||| Fixture data: size, weight, power, channels, wheels, links
