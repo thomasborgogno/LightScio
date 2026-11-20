@@ -19,6 +19,10 @@ pub struct UpdateState {
     pub dl_progress: Option<Arc<Mutex<f32>>>,
     pub dl_rx: Option<Receiver<Result<std::path::PathBuf, String>>>,
     pub show_notes: bool,
+    /// When the last check was started (this session), to retry after a failure.
+    pub last_auto_try: Option<std::time::Instant>,
+    /// Whether the last check failed (then retry sooner).
+    pub last_failed: bool,
 }
 
 fn now_secs() -> u64 {
@@ -40,20 +44,46 @@ impl App {
         if manual {
             self.update.message = ts("Controllo in corso…").into();
         }
-        self.prefs.last_update_check = now_secs();
+        self.update.last_auto_try = Some(std::time::Instant::now());
     }
 
-    /// Automatic check once at start-up (if enabled, and not more than every 12 hours).
+    /// Seconds since the last check that succeeded (saved across sessions).
+    fn since_last_success(&self) -> u64 {
+        now_secs().saturating_sub(self.prefs.last_update_check)
+    }
+
+    /// Automatic check at start-up (if enabled), unless one succeeded in the last 2 hours.
     pub fn auto_update_check(&mut self) {
-        if self.screenshot.is_none() && self.prefs.check_updates && now_secs().saturating_sub(self.prefs.last_update_check) > 12 * 3600 {
+        if self.screenshot.is_none() && self.prefs.check_updates && self.since_last_success() >= 2 * 3600 {
+            self.start_update_check(false);
+        }
+    }
+
+    /// While the app stays open: check again 12 hours after the last successful check,
+    /// or 10 minutes after a failed one.
+    fn periodic_update_check(&mut self) {
+        if self.screenshot.is_some() || !self.prefs.check_updates || self.update.rx.is_some() || self.update.dl_rx.is_some() || self.update.available.is_some() {
+            return;
+        }
+        let due = if self.update.last_failed {
+            self.update.last_auto_try.map_or(true, |t| t.elapsed().as_secs() >= 10 * 60)
+        } else {
+            self.since_last_success() >= 12 * 3600
+        };
+        if due {
             self.start_update_check(false);
         }
     }
 
     pub fn poll_update(&mut self, ctx: &egui::Context) {
+        self.periodic_update_check();
         if let Some(rx) = &self.update.rx {
             if let Ok(r) = rx.try_recv() {
                 self.update.rx = None;
+                self.update.last_failed = r.is_err();
+                if r.is_ok() {
+                    self.prefs.last_update_check = now_secs();
+                }
                 match r {
                     Ok(Some(info)) => {
                         let skipped = !self.update.manual && self.prefs.skip_version == info.version;
