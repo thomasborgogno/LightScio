@@ -1,12 +1,12 @@
 //! Main application state, background jobs, project files and top bar.
 
 use crate::analysis::{self, AnalysisOut, LoadOutput, Progress, ProgressHandle};
-#[allow(unused_imports)]
-use crate::i18n::{t, ts};
 use crate::audio::Player;
 use crate::autoshow;
 use crate::dmx::{self, PortInfo};
 use crate::engine::{self, FxState};
+#[allow(unused_imports)]
+use crate::i18n::{t, ts};
 use crate::live::{Shared, SharedHandle};
 use crate::midi::MidiIn;
 use crate::model::*;
@@ -57,13 +57,21 @@ pub struct Timeline {
 
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub enum StageMode {
+    Patch,
     Perspective,
     Plan,
 }
 
 pub enum JobResult {
-    Loaded { song: usize, analyze: bool, out: Result<LoadOutput, String> },
-    Claude { song: usize, out: Result<(Vec<Cue>, Vec<Hit>), String> },
+    Loaded {
+        song: usize,
+        analyze: bool,
+        out: Result<LoadOutput, String>,
+    },
+    Claude {
+        song: usize,
+        out: Result<(Vec<Cue>, Vec<Hit>), String>,
+    },
 }
 
 pub struct Job {
@@ -86,7 +94,6 @@ pub struct App {
     pub song: usize,
     pub sel: Sel,
     pub sel_fixture: Option<u32>,
-    pub dragging: Option<u32>,
     pub shared: SharedHandle,
     pub player: Player,
     pub audio_for: Option<usize>,
@@ -117,6 +124,7 @@ pub struct App {
     /// Multi-selection of fixtures (always contains `sel_fixture` when set).
     pub sel_set: std::collections::BTreeSet<u32>,
     pub plan_drag: Option<crate::stage::PlanDrag>,
+    pub patch_drag: Option<crate::patch::PatchDrag>,
     /// Favourite fixture models (kept across projects).
     pub favorites: Vec<FixtureDef>,
     /// Open Fixture Library: index, installed version, background job.
@@ -191,10 +199,20 @@ pub fn fmt_time(t: f64) -> String {
 }
 
 impl App {
-    pub fn new(cc: &eframe::CreationContext<'_>, screenshot: Option<PathBuf>, open_file: Option<PathBuf>) -> Self {
+    pub fn new(
+        cc: &eframe::CreationContext<'_>,
+        screenshot: Option<PathBuf>,
+        open_file: Option<PathBuf>,
+    ) -> Self {
         // language first: everything created below uses it
-        let stored_prefs: Option<Prefs> = cc.storage.and_then(|s| s.get_string("prefs")).and_then(|s| serde_json::from_str(&s).ok());
-        let lang = std::env::var("LUCI_LANG").ok().or_else(|| stored_prefs.as_ref().map(|p| p.language.clone())).unwrap_or_else(|| "auto".into());
+        let stored_prefs: Option<Prefs> = cc
+            .storage
+            .and_then(|s| s.get_string("prefs"))
+            .and_then(|s| serde_json::from_str(&s).ok());
+        let lang = std::env::var("LUCI_LANG")
+            .ok()
+            .or_else(|| stored_prefs.as_ref().map(|p| p.language.clone()))
+            .unwrap_or_else(|| "auto".into());
         crate::i18n::set_english(crate::i18n::resolve(&lang));
         setup_style(&cc.egui_ctx);
         let catalog = crate::catalog::builtin();
@@ -239,7 +257,6 @@ impl App {
             song: 0,
             sel: Sel::None,
             sel_fixture: None,
-            dragging: None,
             shared,
             player: Player::new(),
             audio_for: None,
@@ -262,6 +279,7 @@ impl App {
             },
             sel_set: Default::default(),
             plan_drag: None,
+            patch_drag: None,
             favorites: vec![],
             ofl: vec![],
             ofl_info: None,
@@ -277,7 +295,13 @@ impl App {
             pending_play: None,
             auto_audio_tried: None,
             waves: Default::default(),
-            ed: EditorState { start: 0.0, pps: 22.0, drag: None, sel: None, follow: true },
+            ed: EditorState {
+                start: 0.0,
+                pps: 22.0,
+                drag: None,
+                sel: None,
+                follow: true,
+            },
             metro_key: String::new(),
             adapt: None,
             rig_import: None,
@@ -295,7 +319,10 @@ impl App {
             last_push: Instant::now(),
             last_gen: 0,
             last_realign: Instant::now(),
-            screenshot: screenshot.map(|path| Shot { path, requested: false }),
+            screenshot: screenshot.map(|path| Shot {
+                path,
+                requested: false,
+            }),
             frame: 0,
             stage_mode: StageMode::Perspective,
             undo: vec![],
@@ -315,16 +342,29 @@ impl App {
             app.waves.insert(0, pk);
         }
         if let Some(storage) = cc.storage {
-            if let Some(f) = storage.get_string("favorites").and_then(|s| serde_json::from_str::<Vec<FixtureDef>>(&s).ok()) {
+            if let Some(f) = storage
+                .get_string("favorites")
+                .and_then(|s| serde_json::from_str::<Vec<FixtureDef>>(&s).ok())
+            {
                 app.favorites = f;
             }
-            if let Some(p) = storage.get_string("prefs").and_then(|s| serde_json::from_str::<Prefs>(&s).ok()) {
+            if let Some(p) = storage
+                .get_string("prefs")
+                .and_then(|s| serde_json::from_str::<Prefs>(&s).ok())
+            {
                 apply_prefs(&cc.egui_ctx, &p);
                 app.prefs = p;
             }
         }
         if app.screenshot.is_none() {
-            app.start_ofl(if app.prefs.ofl_auto { crate::ofl::Update::IfDue } else { crate::ofl::Update::Never }, false);
+            app.start_ofl(
+                if app.prefs.ofl_auto {
+                    crate::ofl::Update::IfDue
+                } else {
+                    crate::ofl::Update::Never
+                },
+                false,
+            );
             app.auto_update_check();
         }
         if app.midi_choice.is_empty() {
@@ -339,7 +379,13 @@ impl App {
                 "rig" => {
                     app.tab = Tab::Rig;
                     app.stage_mode = StageMode::Plan;
-                    app.sel_set = app.project.fixtures.iter().filter(|f| f.group == Group::BackWash).map(|f| f.id).collect();
+                    app.sel_set = app
+                        .project
+                        .fixtures
+                        .iter()
+                        .filter(|f| f.group == Group::BackWash)
+                        .map(|f| f.id)
+                        .collect();
                     app.sel_fixture = app.sel_set.iter().next().copied();
                     if let Some(lib) = crate::ofl::lib_dir() {
                         app.ofl_info = crate::ofl::read_info(&lib);
@@ -347,9 +393,12 @@ impl App {
                     }
                     // optional: LUCI_INFO=<search text> opens the data sheet of that library fixture
                     if let Ok(q) = std::env::var("LUCI_INFO") {
-                        if let Some(e) = app.ofl.iter().find(|e| e.key.contains(&q.to_lowercase())) {
+                        if let Some(e) = app.ofl.iter().find(|e| e.key.contains(&q.to_lowercase()))
+                        {
                             let path = e.path.clone();
-                            app.info_def = crate::ofl::load(&path).ok().and_then(|v| v.into_iter().next());
+                            app.info_def = crate::ofl::load(&path)
+                                .ok()
+                                .and_then(|v| v.into_iter().next());
                             app.ofl_pick = Some((path, 0));
                             app.search = q;
                         }
@@ -365,11 +414,21 @@ impl App {
                 .project
                 .songs
                 .first()
-                .and_then(|s| s.sections.iter().find(|x| x.kind == SectionKind::Chorus).map(|x| x.start + 4.0))
+                .and_then(|s| {
+                    s.sections
+                        .iter()
+                        .find(|x| x.kind == SectionKind::Chorus)
+                        .map(|x| x.start + 4.0)
+                })
                 .unwrap_or(60.0);
             if let Some(s) = app.project.songs.first() {
                 // avoid a moment covered by a white flash / blinder
-                while s.hits.iter().any(|h| h.time <= t && t < h.time + h.duration + 1.2) && t < s.duration() {
+                while s
+                    .hits
+                    .iter()
+                    .any(|h| h.time <= t && t < h.time + h.duration + 1.2)
+                    && t < s.duration()
+                {
                     t += 0.25;
                 }
             }
@@ -377,7 +436,12 @@ impl App {
             if let Ok(mut s) = app.shared.lock() {
                 s.transport.play_from(t, Instant::now(), false);
             }
-            if let Some(i) = app.project.songs.first().and_then(|s| s.cues.iter().rposition(|c| c.time <= t)) {
+            if let Some(i) = app
+                .project
+                .songs
+                .first()
+                .and_then(|s| s.cues.iter().rposition(|c| c.time <= t))
+            {
                 app.sel = Sel::Cue(i);
             }
         }
@@ -390,7 +454,9 @@ impl App {
     fn project_hash(&self) -> u64 {
         use std::hash::{Hash, Hasher};
         let mut h = std::collections::hash_map::DefaultHasher::new();
-        serde_json::to_string(&self.project).unwrap_or_default().hash(&mut h);
+        serde_json::to_string(&self.project)
+            .unwrap_or_default()
+            .hash(&mut h);
         h.finish()
     }
     /// The current project state is the saved one (no unsaved changes).
@@ -419,10 +485,14 @@ impl App {
             .resizable(false)
             .anchor(egui::Align2::CENTER_CENTER, [0.0, 0.0])
             .show(ctx, |ui| {
-                ui.label(ts("Ci sono modifiche non salvate al progetto. Vuoi salvarle prima di uscire?"));
+                ui.label(ts(
+                    "Ci sono modifiche non salvate al progetto. Vuoi salvarle prima di uscire?",
+                ));
                 ui.add_space(8.0);
                 ui.horizontal(|ui| {
-                    save = ui.button(RichText::new(ts("💾 Salva ed esci")).strong()).clicked();
+                    save = ui
+                        .button(RichText::new(ts("💾 Salva ed esci")).strong())
+                        .clicked();
                     discard = ui.button(ts("Esci senza salvare")).clicked();
                     cancel = ui.button(ts("Annulla")).clicked();
                 });
@@ -451,7 +521,10 @@ impl App {
         self.shared.lock().map(|s| s.transport.pos()).unwrap_or(0.0)
     }
     pub fn is_playing(&self) -> bool {
-        self.shared.lock().map(|s| s.transport.playing).unwrap_or(false)
+        self.shared
+            .lock()
+            .map(|s| s.transport.playing)
+            .unwrap_or(false)
     }
     pub fn play(&mut self) {
         self.play_until = None;
@@ -459,20 +532,27 @@ impl App {
         let dur = self.cur_song().map(|s| s.duration()).unwrap_or(0.0);
         let pos = if pos >= dur - 0.05 { 0.0 } else { pos };
         // without audio files on this computer the lights still run (silent show)
-        let has_tracks = self.cur_song().map(crate::relink::song_has_audio).unwrap_or(false);
+        let has_tracks = self
+            .cur_song()
+            .map(crate::relink::song_has_audio)
+            .unwrap_or(false);
         if self.audio_for != Some(self.song) && has_tracks {
             // audio not in memory yet (e.g. project just reopened): load it, then start
             if !self.job_running("Carico") && !self.job_running("Analisi") {
                 self.start_load(self.song, false);
             }
             self.pending_play = Some((pos, None));
-            self.status = ts("Carico l'audio delle tracce, la riproduzione parte appena è pronto…").into();
+            self.status =
+                ts("Carico l'audio delle tracce, la riproduzione parte appena è pronto…").into();
             return;
         }
         if self.audio_for == Some(self.song) {
             self.player.play(pos);
             if !self.player.error.is_empty() {
-                self.status = crate::i18n::t(&format!("Audio: {}", std::mem::take(&mut self.player.error)));
+                self.status = crate::i18n::t(&format!(
+                    "Audio: {}",
+                    std::mem::take(&mut self.player.error)
+                ));
             }
         }
         if let Ok(mut s) = self.shared.lock() {
@@ -507,7 +587,13 @@ impl App {
         }
     }
     pub fn select_song(&mut self, i: usize) {
-        if i == self.song && self.shared.lock().map(|s| s.transport.song == i).unwrap_or(true) {
+        if i == self.song
+            && self
+                .shared
+                .lock()
+                .map(|s| s.transport.song == i)
+                .unwrap_or(true)
+        {
             return;
         }
         self.player.stop();
@@ -521,7 +607,9 @@ impl App {
         }
         if self.audio_for != Some(self.song) {
             self.player.set_buffer(None);
-            self.audio_for = None; self.auto_audio_tried = None; self.waves.clear();
+            self.audio_for = None;
+            self.auto_audio_tried = None;
+            self.waves.clear();
         }
     }
 
@@ -565,7 +653,10 @@ impl App {
 
     /// Play the preview between two times (listening to one part of the song).
     pub fn play_range(&mut self, from: f64, until: Option<f64>) {
-        let has_tracks = self.cur_song().map(crate::relink::song_has_audio).unwrap_or(false);
+        let has_tracks = self
+            .cur_song()
+            .map(crate::relink::song_has_audio)
+            .unwrap_or(false);
         if self.audio_for != Some(self.song) && has_tracks {
             if !self.job_running("Carico") && !self.job_running("Analisi") {
                 self.start_load(self.song, false);
@@ -604,12 +695,19 @@ impl App {
                 Msg::Updated(list, info) => {
                     self.ofl = list;
                     self.ofl_cache.clear();
-                    self.status = t(&format!("Libreria fixture aggiornata: {} modelli (versione del {}).", self.ofl.len(), info.day()));
+                    self.status = t(&format!(
+                        "Libreria fixture aggiornata: {} modelli (versione del {}).",
+                        self.ofl.len(),
+                        info.day()
+                    ));
                     self.ofl_info = Some(info);
                 }
                 Msg::UpToDate(info) => {
                     if self.ofl_manual {
-                        self.status = t(&format!("La libreria fixture è già aggiornata (versione del {}).", info.day()));
+                        self.status = t(&format!(
+                            "La libreria fixture è già aggiornata (versione del {}).",
+                            info.day()
+                        ));
                     }
                     self.ofl_info = Some(info);
                 }
@@ -635,7 +733,9 @@ impl App {
     }
 
     pub fn start_load(&mut self, song: usize, analyze: bool) {
-        let Some(s) = self.project.songs.get(song) else { return };
+        let Some(s) = self.project.songs.get(song) else {
+            return;
+        };
         if s.tracks.is_empty() {
             self.status = ts("Aggiungi prima le tracce audio del brano").into();
             return;
@@ -649,12 +749,23 @@ impl App {
             let out = analysis::load_song(&tracks, analyze, bpb, &p2);
             let _ = tx.send(JobResult::Loaded { song, analyze, out });
         });
-        let label = if analyze { format!("Analisi di «{}»", s.name) } else { format!("Carico l'audio di «{}»", s.name) };
-        self.jobs.push(Job { label, progress, rx, started: Instant::now() });
+        let label = if analyze {
+            format!("Analisi di «{}»", s.name)
+        } else {
+            format!("Carico l'audio di «{}»", s.name)
+        };
+        self.jobs.push(Job {
+            label,
+            progress,
+            rx,
+            started: Instant::now(),
+        });
     }
 
     pub fn start_claude(&mut self, song: usize) {
-        let Some(s) = self.project.songs.get(song) else { return };
+        let Some(s) = self.project.songs.get(song) else {
+            return;
+        };
         if s.analysis.is_none() {
             self.status = ts("Analizza prima il brano").into();
             return;
@@ -662,13 +773,22 @@ impl App {
         let prompt = autoshow::claude_prompt(s, &self.project, &self.catalog);
         let cmd = self.project.settings.claude_command.clone();
         let song_copy = s.clone();
-        let progress: ProgressHandle = Arc::new(Mutex::new(Progress { frac: 0.0, msg: ts("Claude Code sta progettando lo show…").into() }));
+        let progress: ProgressHandle = Arc::new(Mutex::new(Progress {
+            frac: 0.0,
+            msg: ts("Claude Code sta progettando lo show…").into(),
+        }));
         let (tx, rx) = mpsc::channel();
         std::thread::spawn(move || {
-            let out = autoshow::run_claude(&cmd, &prompt).and_then(|text| autoshow::parse_claude(&text, &song_copy));
+            let out = autoshow::run_claude(&cmd, &prompt)
+                .and_then(|text| autoshow::parse_claude(&text, &song_copy));
             let _ = tx.send(JobResult::Claude { song, out });
         });
-        self.jobs.push(Job { label: format!("Claude per «{}»", s.name), progress, rx, started: Instant::now() });
+        self.jobs.push(Job {
+            label: format!("Claude per «{}»", s.name),
+            progress,
+            rx,
+            started: Instant::now(),
+        });
     }
 
     fn poll_jobs(&mut self) {
@@ -689,7 +809,8 @@ impl App {
                                 o.errors.join("; ")
                             ));
                         } else if !o.errors.is_empty() {
-                            self.status = format!("Alcune tracce non lette: {}", o.errors.join("; "));
+                            self.status =
+                                format!("Alcune tracce non lette: {}", o.errors.join("; "));
                         }
                         self.waves.insert(song, o.peaks);
                         if song == self.song {
@@ -701,7 +822,12 @@ impl App {
                         }
                         if analyze {
                             if let Some(a) = o.analysis {
-                                let auto_show = self.project.songs.get(song).map(|s| s.cues.is_empty()).unwrap_or(false);
+                                let auto_show = self
+                                    .project
+                                    .songs
+                                    .get(song)
+                                    .map(|s| s.cues.is_empty())
+                                    .unwrap_or(false);
                                 if let Some(s) = self.project.songs.get_mut(song) {
                                     apply_analysis(s, a);
                                 }
@@ -760,11 +886,15 @@ impl App {
         self.song = 0;
         self.sel = Sel::None;
         self.player.set_buffer(None);
-        self.audio_for = None; self.auto_audio_tried = None; self.waves.clear();
+        self.audio_for = None;
+        self.auto_audio_tried = None;
+        self.waves.clear();
         self.undo.clear();
         self.push_project();
         self.mark_saved();
-        self.status = ts("Nuovo progetto: aggiungi i fari (scheda Fari e palco) e i brani (scheda Brani)").into();
+        self.status =
+            ts("Nuovo progetto: aggiungi i fari (scheda Fari e palco) e i brani (scheda Brani)")
+                .into();
     }
 
     pub fn load_demo(&mut self) {
@@ -785,7 +915,10 @@ impl App {
     }
 
     pub fn open_dialog(&mut self) {
-        if let Some(p) = rfd::FileDialog::new().add_filter(ts("Show luci"), &["luci", "json"]).pick_file() {
+        if let Some(p) = rfd::FileDialog::new()
+            .add_filter(ts("Show luci"), &["luci", "json"])
+            .pick_file()
+        {
             match load_project(&p) {
                 Ok(pr) => {
                     self.stop();
@@ -794,13 +927,21 @@ impl App {
                     self.song = 0;
                     self.sel = Sel::None;
                     self.player.set_buffer(None);
-                    self.audio_for = None; self.auto_audio_tried = None; self.waves.clear();
+                    self.audio_for = None;
+                    self.auto_audio_tried = None;
+                    self.waves.clear();
                     self.undo.clear();
                     self.push_project();
                     self.mark_saved();
                     self.enter_auto_live();
                     self.status = crate::i18n::t(&format!("Aperto {}", p.display()));
-                    let missing = self.project.songs.iter().flat_map(|s| &s.tracks).filter(|t| !crate::relink::track_available(&t.path)).count();
+                    let missing = self
+                        .project
+                        .songs
+                        .iter()
+                        .flat_map(|s| &s.tracks)
+                        .filter(|t| !crate::relink::track_available(&t.path))
+                        .count();
                     if missing > 0 {
                         self.status = crate::i18n::t(&format!(
                             "Aperto {}: {} tracce audio non trovate su questo computer (le luci funzionano comunque; File ▸ Ricollega tracce…)",
@@ -817,7 +958,12 @@ impl App {
     /// "Ricollega tracce": pick the new folder with the audio files and re-point
     /// every track of every song to it (matching by file name and parent folders).
     pub fn relink_dialog(&mut self) {
-        let Some(root) = rfd::FileDialog::new().set_title(ts("Scegli la cartella che contiene gli MP3 (anche con sottocartelle)")).pick_folder() else {
+        let Some(root) = rfd::FileDialog::new()
+            .set_title(ts(
+                "Scegli la cartella che contiene gli MP3 (anche con sottocartelle)",
+            ))
+            .pick_folder()
+        else {
             return;
         };
         self.stop();
@@ -863,12 +1009,29 @@ impl App {
 
     pub fn export_midi(&mut self, all: bool) {
         if all {
-            let Some(dir) = rfd::FileDialog::new().pick_folder() else { return };
+            let Some(dir) = rfd::FileDialog::new().pick_folder() else {
+                return;
+            };
             let mut n = 0;
             for s in &self.project.songs {
                 let (bytes, _) = crate::midi::export_song(s, &self.project.settings);
-                let name: String = s.name.chars().map(|c| if c.is_alphanumeric() || c == ' ' || c == '-' { c } else { '_' }).collect();
-                if std::fs::write(dir.join(format!("{:02} {} - luci.mid", s.program, name.trim())), bytes).is_ok() {
+                let name: String = s
+                    .name
+                    .chars()
+                    .map(|c| {
+                        if c.is_alphanumeric() || c == ' ' || c == '-' {
+                            c
+                        } else {
+                            '_'
+                        }
+                    })
+                    .collect();
+                if std::fs::write(
+                    dir.join(format!("{:02} {} - luci.mid", s.program, name.trim())),
+                    bytes,
+                )
+                .is_ok()
+                {
                     n += 1;
                 }
             }
@@ -877,10 +1040,22 @@ impl App {
             let Some(s) = self.cur_song() else { return };
             let (bytes, list) = crate::midi::export_song(s, &self.project.settings);
             let default = crate::i18n::t(&format!("{} - luci.mid", s.name));
-            if let Some(p) = rfd::FileDialog::new().add_filter(ts("MIDI"), &["mid"]).set_file_name(default).save_file() {
+            if let Some(p) = rfd::FileDialog::new()
+                .add_filter(ts("MIDI"), &["mid"])
+                .set_file_name(default)
+                .save_file()
+            {
                 match std::fs::write(&p, bytes) {
-                    Ok(()) => self.status = crate::i18n::t(&format!("Traccia MIDI salvata ({} eventi) in {}", list.len(), p.display())),
-                    Err(e) => self.status = crate::i18n::t(&format!("Impossibile salvare il MIDI: {e}")),
+                    Ok(()) => {
+                        self.status = crate::i18n::t(&format!(
+                            "Traccia MIDI salvata ({} eventi) in {}",
+                            list.len(),
+                            p.display()
+                        ))
+                    }
+                    Err(e) => {
+                        self.status = crate::i18n::t(&format!("Impossibile salvare il MIDI: {e}"))
+                    }
                 }
             }
         }
@@ -897,19 +1072,19 @@ impl App {
                 ui.menu_button(ts("File"), |ui| {
                     if ui.button(ts("Nuovo progetto")).clicked() {
                         self.new_project();
-                        ui.close_menu();
+                        ui.close();
                     }
                     if ui.button(ts("Apri…")).clicked() {
                         self.open_dialog();
-                        ui.close_menu();
+                        ui.close();
                     }
                     if ui.button(ts("Salva")).clicked() {
                         self.save(false);
-                        ui.close_menu();
+                        ui.close();
                     }
                     if ui.button(ts("Salva con nome…")).clicked() {
                         self.save(true);
-                        ui.close_menu();
+                        ui.close();
                     }
                     if ui
                         .button(ts("Ricollega tracce…"))
@@ -917,16 +1092,16 @@ impl App {
                         .clicked()
                     {
                         self.relink_dialog();
-                        ui.close_menu();
+                        ui.close();
                     }
                     ui.separator();
                     if ui.button(ts("Esporta traccia MIDI del brano…")).clicked() {
                         self.export_midi(false);
-                        ui.close_menu();
+                        ui.close();
                     }
                     if ui.button(ts("Esporta MIDI di tutti i brani…")).clicked() {
                         self.export_midi(true);
-                        ui.close_menu();
+                        ui.close();
                     }
                     ui.separator();
                     if ui
@@ -935,11 +1110,11 @@ impl App {
                         .clicked()
                     {
                         self.open_adapt();
-                        ui.close_menu();
+                        ui.close();
                     }
                     if ui.button(ts("Esporta setup luci…")).on_hover_text(ts("Salva palco e fari in un file, per riusarli in altri progetti")).clicked() {
                         self.export_rig();
-                        ui.close_menu();
+                        ui.close();
                     }
                     if ui
                         .button(ts("Importa setup luci…"))
@@ -947,23 +1122,23 @@ impl App {
                         .clicked()
                     {
                         self.pick_rig_import();
-                        ui.close_menu();
+                        ui.close();
                     }
                     ui.separator();
                     if ui.button(ts("⚙ Preferenze…")).clicked() {
                         self.show_prefs = true;
-                        ui.close_menu();
+                        ui.close();
                     }
                     if ui.button(ts("⬆ Controlla aggiornamenti…")).clicked() {
                         self.show_prefs = true;
                         self.update.dismissed = false;
                         self.start_update_check(true);
-                        ui.close_menu();
+                        ui.close();
                     }
                     ui.separator();
                     if ui.button(ts("Carica il progetto demo")).clicked() {
                         self.load_demo();
-                        ui.close_menu();
+                        ui.close();
                     }
                 });
                 ui.separator();
@@ -1010,7 +1185,12 @@ impl App {
                 for j in &self.jobs {
                     let p = j.progress.lock().map(|p| p.clone()).unwrap_or_default();
                     ui.spinner();
-                    ui.label(crate::i18n::t(&format!("{} — {} ({:.0}s)", j.label, p.msg, j.started.elapsed().as_secs_f32())));
+                    ui.label(crate::i18n::t(&format!(
+                        "{} — {} ({:.0}s)",
+                        j.label,
+                        p.msg,
+                        j.started.elapsed().as_secs_f32()
+                    )));
                     if p.frac > 0.0 {
                         ui.add(egui::ProgressBar::new(p.frac).desired_width(120.0));
                     }
@@ -1023,7 +1203,13 @@ impl App {
 
     fn sync_transport(&mut self) {
         let (gen, playing, by_midi, song, pos) = match self.shared.lock() {
-            Ok(s) => (s.transport.gen, s.transport.playing, s.transport.by_midi, s.transport.song, s.transport.pos()),
+            Ok(s) => (
+                s.transport.gen,
+                s.transport.playing,
+                s.transport.by_midi,
+                s.transport.song,
+                s.transport.pos(),
+            ),
             Err(_) => return,
         };
         if gen != self.last_gen {
@@ -1037,7 +1223,11 @@ impl App {
                 }
             }
         }
-        if playing && !by_midi && self.player.is_playing() && self.last_realign.elapsed() > Duration::from_millis(500) {
+        if playing
+            && !by_midi
+            && self.player.is_playing()
+            && self.last_realign.elapsed() > Duration::from_millis(500)
+        {
             let ap = self.player.position();
             if let Ok(mut s) = self.shared.lock() {
                 s.transport.realign(ap);
@@ -1064,9 +1254,21 @@ impl App {
         let (blackout, identify) = self
             .shared
             .lock()
-            .map(|s| (s.blackout, s.identify.clone().filter(|(_, at)| at.elapsed() < Duration::from_secs(3)).map(|x| x.0)))
+            .map(|s| {
+                (
+                    s.blackout,
+                    s.identify
+                        .clone()
+                        .filter(|(_, at)| at.elapsed() < Duration::from_secs(3))
+                        .map(|x| x.0),
+                )
+            })
             .unwrap_or((false, None));
-        let shown_song = self.shared.lock().map(|s| s.transport.song).unwrap_or(self.song);
+        let shown_song = self
+            .shared
+            .lock()
+            .map(|s| s.transport.song)
+            .unwrap_or(self.song);
         self.states = engine::render(&engine::RenderInput {
             project: &self.project,
             catalog: &self.catalog,
@@ -1078,7 +1280,9 @@ impl App {
     }
 
     fn handle_screenshot(&mut self, ctx: &egui::Context) {
-        let Some(shot) = &mut self.screenshot else { return };
+        let Some(shot) = &mut self.screenshot else {
+            return;
+        };
         ctx.request_repaint();
         if self.frame >= 120 && !shot.requested {
             shot.requested = true;
@@ -1101,7 +1305,13 @@ impl App {
             if let Some(dir) = shot.path.parent() {
                 let _ = std::fs::create_dir_all(dir);
             }
-            if let Err(e) = image::save_buffer(&shot.path, &bytes, w as u32, h as u32, image::ColorType::Rgba8) {
+            if let Err(e) = image::save_buffer(
+                &shot.path,
+                &bytes,
+                w as u32,
+                h as u32,
+                image::ColorType::Rgba8,
+            ) {
                 eprintln!("screenshot: {e}");
             }
             ctx.send_viewport_cmd(egui::ViewportCommand::Close);
@@ -1128,7 +1338,10 @@ impl eframe::App for App {
         // (checked only while audio is missing and not yet tried: avoids a disk stat on every frame)
         let has_tracks = self.audio_for != Some(self.song)
             && self.auto_audio_tried != Some(self.song)
-            && self.cur_song().map(crate::relink::song_has_audio).unwrap_or(false);
+            && self
+                .cur_song()
+                .map(crate::relink::song_has_audio)
+                .unwrap_or(false);
         if self.screenshot.is_none()
             && has_tracks
             && self.audio_for != Some(self.song)
@@ -1191,14 +1404,19 @@ pub fn apply_analysis(s: &mut Song, a: AnalysisOut) {
 }
 
 pub fn load_project(p: &std::path::Path) -> Result<Project, String> {
-    let text = std::fs::read_to_string(p).map_err(|e| crate::i18n::t(&format!("Impossibile aprire {}: {e}", p.display())))?;
-    let mut pr: Project = serde_json::from_str(&text).map_err(|e| crate::i18n::t(&format!("File non valido: {e}")))?;
+    let text = std::fs::read_to_string(p)
+        .map_err(|e| crate::i18n::t(&format!("Impossibile aprire {}: {e}", p.display())))?;
+    let mut pr: Project = serde_json::from_str(&text)
+        .map_err(|e| crate::i18n::t(&format!("File non valido: {e}")))?;
     pr.fix();
     Ok(pr)
 }
 
 pub fn demo_project() -> (Project, Option<Arc<analysis::AudioBuf>>, Vec<Vec<f32>>) {
-    let mut p = Project { name: ts("Show demo").into(), ..Project::default() };
+    let mut p = Project {
+        name: ts("Show demo").into(),
+        ..Project::default()
+    };
     crate::demo::demo_rig(&mut p);
     let mut song = Song::new(ts("Brano demo (sintetico)"), 0);
     song.tracks = crate::demo::demo_tracks();
@@ -1237,7 +1455,9 @@ fn setup_fonts(ctx: &egui::Context) {
     for (i, p) in candidates.iter().enumerate() {
         if let Ok(bytes) = std::fs::read(p) {
             let name = format!("sys_symbols_{i}");
-            fonts.font_data.insert(name.clone(), Arc::new(egui::FontData::from_owned(bytes)));
+            fonts
+                .font_data
+                .insert(name.clone(), Arc::new(egui::FontData::from_owned(bytes)));
             for fam in [egui::FontFamily::Proportional, egui::FontFamily::Monospace] {
                 fonts.families.entry(fam).or_default().push(name.clone());
             }
@@ -1257,7 +1477,7 @@ fn setup_style(ctx: &egui::Context) {
     v.extreme_bg_color = Color32::from_rgb(12, 12, 16);
     v.faint_bg_color = Color32::from_rgb(28, 29, 37);
     v.selection.bg_fill = Color32::from_rgb(170, 110, 20);
-    v.selection.stroke = egui::Stroke::new(1.0, Color32::from_rgb(255, 210, 120));
+    v.selection.stroke = egui::Stroke::new(1.0_f32, Color32::from_rgb(255, 210, 120));
     v.widgets.hovered.bg_fill = Color32::from_rgb(55, 57, 70);
     v.widgets.inactive.bg_fill = Color32::from_rgb(40, 42, 52);
     v.widgets.inactive.weak_bg_fill = Color32::from_rgb(40, 42, 52);
@@ -1326,42 +1546,65 @@ impl App {
         let mut open = true;
         let mut changed = false;
         let mut lang_changed = false;
-        egui::Window::new(ts("⚙ Preferenze")).open(&mut open).resizable(false).default_width(380.0).show(ctx, |ui| {
-            egui::Grid::new("prefs").num_columns(2).spacing([12.0, 10.0]).show(ui, |ui| {
-                ui.label(ts("Dimensione testi"));
-                changed |= ui.add(egui::Slider::new(&mut self.prefs.text_scale, 0.7..=2.0).custom_formatter(|v, _| format!("{:.0}%", v * 100.0))).changed();
-                ui.end_row();
-                ui.label(ts("Dimensione pulsanti"));
-                changed |= ui.add(egui::Slider::new(&mut self.prefs.button_scale, 0.7..=2.5).custom_formatter(|v, _| format!("{:.0}%", v * 100.0))).changed();
-                ui.end_row();
-            });
-            ui.horizontal(|ui| {
-                ui.label(ts("Lingua"));
-                let cur = self.prefs.language.clone();
-                let name = |c: &str| match c {
-                    "it" => "Italiano",
-                    "en" => "English",
-                    _ => ts("Automatica (sistema)"),
-                };
-                egui::ComboBox::from_id_salt("lang").selected_text(name(&cur)).show_ui(ui, |ui| {
-                    for c in ["auto", "it", "en"] {
-                        if ui.selectable_label(cur == c, name(c)).clicked() && cur != c {
-                            self.prefs.language = c.to_string();
-                            lang_changed = true;
-                        }
-                    }
+        egui::Window::new(ts("⚙ Preferenze"))
+            .open(&mut open)
+            .resizable(false)
+            .default_width(380.0)
+            .show(ctx, |ui| {
+                egui::Grid::new("prefs")
+                    .num_columns(2)
+                    .spacing([12.0, 10.0])
+                    .show(ui, |ui| {
+                        ui.label(ts("Dimensione testi"));
+                        changed |= ui
+                            .add(
+                                egui::Slider::new(&mut self.prefs.text_scale, 0.7..=2.0)
+                                    .custom_formatter(|v, _| format!("{:.0}%", v * 100.0)),
+                            )
+                            .changed();
+                        ui.end_row();
+                        ui.label(ts("Dimensione pulsanti"));
+                        changed |= ui
+                            .add(
+                                egui::Slider::new(&mut self.prefs.button_scale, 0.7..=2.5)
+                                    .custom_formatter(|v, _| format!("{:.0}%", v * 100.0)),
+                            )
+                            .changed();
+                        ui.end_row();
+                    });
+                ui.horizontal(|ui| {
+                    ui.label(ts("Lingua"));
+                    let cur = self.prefs.language.clone();
+                    let name = |c: &str| match c {
+                        "it" => "Italiano",
+                        "en" => "English",
+                        _ => ts("Automatica (sistema)"),
+                    };
+                    egui::ComboBox::from_id_salt("lang")
+                        .selected_text(name(&cur))
+                        .show_ui(ui, |ui| {
+                            for c in ["auto", "it", "en"] {
+                                if ui.selectable_label(cur == c, name(c)).clicked() && cur != c {
+                                    self.prefs.language = c.to_string();
+                                    lang_changed = true;
+                                }
+                            }
+                        });
                 });
+                ui.horizontal(|ui| {
+                    if ui.button(ts("Ripristina")).clicked() {
+                        self.prefs.text_scale = 1.0;
+                        self.prefs.button_scale = 1.0;
+                        changed = true;
+                    }
+                    ui.label(
+                        RichText::new(ts("Le preferenze valgono per tutti i progetti."))
+                            .size(11.0)
+                            .color(Color32::GRAY),
+                    );
+                });
+                self.ui_update_prefs(ui);
             });
-            ui.horizontal(|ui| {
-                if ui.button(ts("Ripristina")).clicked() {
-                    self.prefs.text_scale = 1.0;
-                    self.prefs.button_scale = 1.0;
-                    changed = true;
-                }
-                ui.label(RichText::new(ts("Le preferenze valgono per tutti i progetti.")).size(11.0).color(Color32::GRAY));
-            });
-            self.ui_update_prefs(ui);
-        });
         if changed {
             apply_prefs(ctx, &self.prefs);
         }

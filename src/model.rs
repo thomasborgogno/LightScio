@@ -660,12 +660,6 @@ impl Analysis {
         let k = Self::seg(&a, t);
         b[k] + (t - a[k]) / self.spb()
     }
-    pub fn time_of_beat(&self, beat: f64) -> f64 {
-        let a = self.anchors();
-        let b = self.bases(&a);
-        let k = b.partition_point(|&x| x <= beat).saturating_sub(1);
-        a[k] + (beat - b[k]) * self.spb()
-    }
     /// Snap to the nearest 1/div of a beat (respecting the extra downbeats).
     pub fn snap(&self, t: f64, div: f64) -> f64 {
         let a = self.anchors();
@@ -1052,9 +1046,6 @@ impl Project {
             end = end.max(f.address + n);
         }
         end.min(512)
-    }
-    pub fn group_count(&self, g: Group) -> usize {
-        self.fixtures.iter().filter(|f| f.group == g).count()
     }
 }
 

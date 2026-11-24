@@ -84,7 +84,7 @@ pub fn draw_grid(
         let x = tx(t);
         let n = i + 1;
         let (w, col) = if is_anchor {
-            (2.0, Color32::from_rgb(110, 100, 80))
+            (2.0_f32, Color32::from_rgb(110, 100, 80))
         } else if phrase {
             (1.2, Color32::from_rgb(70, 70, 90))
         } else {
@@ -99,7 +99,7 @@ pub fn draw_grid(
             let mut b = t + spb;
             while b < next - 0.01 {
                 let xb = tx(b);
-                p.line_segment([pos2(xb, y_top + 6.0), pos2(xb, y_end)], Stroke::new(0.5, Color32::from_rgb(27, 27, 36)));
+                p.line_segment([pos2(xb, y_top + 6.0), pos2(xb, y_end)], Stroke::new(0.5_f32, Color32::from_rgb(27, 27, 36)));
                 b += spb;
             }
         }
@@ -108,7 +108,7 @@ pub fn draw_grid(
     for &t in anchors.iter().skip(1) {
         if t >= a && t <= z {
             let x = tx(t);
-            p.line_segment([pos2(x, y_top), pos2(x, y_end)], Stroke::new(1.0, Color32::from_rgba_unmultiplied(255, 170, 60, 110)));
+            p.line_segment([pos2(x, y_top), pos2(x, y_end)], Stroke::new(1.0_f32, Color32::from_rgba_unmultiplied(255, 170, 60, 110)));
         }
     }
 }
@@ -128,7 +128,7 @@ pub fn draw_wave(
     col: Color32,
 ) {
     let mid = y + h / 2.0;
-    p.line_segment([pos2(x0, mid), pos2(right, mid)], Stroke::new(0.5, col.gamma_multiply(0.25)));
+    p.line_segment([pos2(x0, mid), pos2(right, mid)], Stroke::new(0.5_f32, col.gamma_multiply(0.25)));
     let step = 1.0f32;
     let mut x = x0;
     while x < right {
@@ -156,10 +156,4 @@ pub fn draw_wave(
         }
         x += step;
     }
-}
-
-/// Peaks (max |sample|) at PEAK_FPS of a mono signal.
-pub fn peaks(mono: &[f32], sr: u32) -> Vec<f32> {
-    let win = ((sr as f64 / PEAK_FPS) as usize).max(1);
-    mono.chunks(win).map(|c| c.iter().fold(0f32, |m, x| m.max(x.abs()))).collect()
 }

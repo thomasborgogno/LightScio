@@ -29,12 +29,6 @@ pub struct AudioBuf {
     pub data: Vec<f32>,
 }
 
-impl AudioBuf {
-    pub fn duration(&self) -> f64 {
-        self.data.len() as f64 / 2.0 / self.sr.max(1) as f64
-    }
-}
-
 pub struct Decoded {
     pub sr: u32,
     pub left: Vec<f32>,

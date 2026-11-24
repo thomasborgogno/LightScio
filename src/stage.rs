@@ -107,9 +107,9 @@ pub fn draw_perspective(
     painter.add(Shape::convex_polygon(
         vec![cam.p(-hw, 0.0, 0.0), cam.p(hw, 0.0, 0.0), cam.p(hw, d, 0.0), cam.p(-hw, d, 0.0)],
         Color32::from_rgb(24, 24, 32),
-        Stroke::new(1.0, Color32::from_rgb(50, 50, 64)),
+        Stroke::new(1.0_f32, Color32::from_rgb(50, 50, 64)),
     ));
-    let grid = Stroke::new(0.5, Color32::from_rgb(34, 34, 44));
+    let grid = Stroke::new(0.5_f32, Color32::from_rgb(34, 34, 44));
     let mut x = -hw.floor();
     while x <= hw {
         painter.line_segment([cam.p(x, 0.0, 0.0), cam.p(x, d, 0.0)], grid);
@@ -169,10 +169,10 @@ pub fn draw_perspective(
     }
 
     // trusses
-    let truss = Stroke::new(2.0, Color32::from_rgb(90, 90, 100));
+    let truss = Stroke::new(2.0_f32, Color32::from_rgb(90, 90, 100));
     for (ty, tz) in [(0.4f32, st.truss_front), (d - 0.5, st.truss_back)] {
         painter.line_segment([cam.p(-hw - 0.3, ty, tz), cam.p(hw + 0.3, ty, tz)], truss);
-        painter.line_segment([cam.p(-hw - 0.3, ty, tz + 0.3), cam.p(hw + 0.3, ty, tz + 0.3)], Stroke::new(1.0, Color32::from_rgb(70, 70, 80)));
+        painter.line_segment([cam.p(-hw - 0.3, ty, tz + 0.3), cam.p(hw + 0.3, ty, tz + 0.3)], Stroke::new(1.0_f32, Color32::from_rgb(70, 70, 80)));
         for sx in [-hw - 0.3, hw + 0.3] {
             painter.line_segment([cam.p(sx, ty, 0.0), cam.p(sx, ty, tz + 0.3)], truss);
         }
@@ -267,7 +267,7 @@ pub fn draw_perspective(
         let lit = rgba([s.rgb[0] * 0.3 + s.rgb[0] * 0.7 * dim, s.rgb[1] * 0.3 + s.rgb[1] * 0.7 * dim, s.rgb[2] * 0.3 + s.rgb[2] * 0.7 * dim], 1.0);
         let lens = if dim > 0.02 { lit } else { Color32::from_rgb(40, 40, 46) };
         let case = Color32::from_rgb(30, 30, 36);
-        let edge = Stroke::new(1.0, Color32::from_rgb(85, 85, 95));
+        let edge = Stroke::new(1.0_f32, Color32::from_rgb(85, 85, 95));
         if dim > 0.05 {
             painter.circle_filled(p, 0.45 * sc, rgba(s.rgb, 0.18 * dim));
         }
@@ -307,7 +307,7 @@ pub fn draw_perspective(
             }
         }
         if Some(f.id) == selected {
-            painter.circle_stroke(p, 0.4 * sc, Stroke::new(2.0, Color32::from_rgb(255, 210, 0)));
+            painter.circle_stroke(p, 0.4 * sc, Stroke::new(2.0_f32, Color32::from_rgb(255, 210, 0)));
         }
         if let Some(pp) = pointer {
             let dd = pp.distance(p);
@@ -367,8 +367,8 @@ pub fn draw_plan(
     let hw = w / 2.0;
     let stage = Rect::from_two_pos(to_s(-hw, 0.0), to_s(hw, d));
     painter.rect_filled(stage, 2.0, Color32::from_rgb(28, 28, 38));
-    painter.rect_stroke(stage, 2.0, Stroke::new(1.0, Color32::from_rgb(70, 70, 90)), StrokeKind::Inside);
-    let grid = Stroke::new(0.5, Color32::from_rgb(40, 40, 52));
+    painter.rect_stroke(stage, 2.0, Stroke::new(1.0_f32, Color32::from_rgb(70, 70, 90)), StrokeKind::Inside);
+    let grid = Stroke::new(0.5_f32, Color32::from_rgb(40, 40, 52));
     let mut x = -hw.floor();
     while x <= hw {
         painter.line_segment([to_s(x, 0.0), to_s(x, d)], grid);
@@ -379,7 +379,7 @@ pub fn draw_plan(
         painter.line_segment([to_s(-hw, y), to_s(hw, y)], grid);
         y += 1.0;
     }
-    let truss = Stroke::new(3.0, Color32::from_rgb(85, 85, 95));
+    let truss = Stroke::new(3.0_f32, Color32::from_rgb(85, 85, 95));
     painter.line_segment([to_s(-hw - 0.3, 0.4), to_s(hw + 0.3, 0.4)], truss);
     painter.line_segment([to_s(-hw - 0.3, d - 0.5), to_s(hw + 0.3, d - 0.5)], truss);
     let small = egui::FontId::proportional(11.0);
@@ -449,7 +449,7 @@ pub fn draw_plan(
             PlanDrag::Rect { start } => {
                 let r = Rect::from_two_pos(*start, p);
                 painter.rect_filled(r, 0.0, Color32::from_rgba_unmultiplied(255, 200, 80, 25));
-                painter.rect_stroke(r, 0.0, Stroke::new(1.0, Color32::from_rgb(255, 200, 80)), StrokeKind::Inside);
+                painter.rect_stroke(r, 0.0, Stroke::new(1.0_f32, Color32::from_rgb(255, 200, 80)), StrokeKind::Inside);
             }
         }
     }
@@ -506,11 +506,11 @@ pub fn draw_plan(
             Color32::from_rgb(55, 55, 62)
         };
         let edge = if Some(f.id) == *selected {
-            Stroke::new(2.5, Color32::from_rgb(255, 210, 0))
+            Stroke::new(2.5_f32, Color32::from_rgb(255, 210, 0))
         } else if selset.contains(&f.id) {
-            Stroke::new(2.0, Color32::from_rgb(255, 160, 40))
+            Stroke::new(2.0_f32, Color32::from_rgb(255, 160, 40))
         } else {
-            Stroke::new(1.5, Color32::from_rgb(150, 150, 160))
+            Stroke::new(1.5_f32, Color32::from_rgb(150, 150, 160))
         };
         match kind {
             FixtureKind::Blinder => {
@@ -528,7 +528,7 @@ pub fn draw_plan(
                 painter.circle_stroke(p, 9.0, edge);
                 let dir = beam_dir(&s, f.hanging);
                 let tip = p + vec2(dir[0], -dir[1]) * 18.0 * (dir[0].hypot(dir[1])).max(0.2) / (dir[0].hypot(dir[1])).max(0.2);
-                painter.line_segment([p, tip], Stroke::new(1.5, col));
+                painter.line_segment([p, tip], Stroke::new(1.5_f32, col));
             }
             _ => {
                 painter.circle_filled(p, 7.0, col);

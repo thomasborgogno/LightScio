@@ -229,12 +229,12 @@ impl App {
                 ui.menu_button(ts("✨ Genera show"), |ui| {
                     if ui.button(ts("Con le regole automatiche")).clicked() {
                         self.regenerate_rules();
-                        ui.close_menu();
+                        ui.close();
                     }
                     let busy = self.job_running("Claude");
                     if ui.add_enabled(!busy, egui::Button::new(ts("Con Claude Code (installato sul PC)"))).clicked() {
                         self.start_claude(self.song);
-                        ui.close_menu();
+                        ui.close();
                     }
                 });
                 if ui.add_enabled(!self.undo.is_empty(), egui::Button::new(ts("↶ Annulla"))).clicked() {
@@ -386,9 +386,9 @@ impl App {
         for row in 0..ntr {
             bottoms.push((Lane::Track, y_tr + h_tr * (row + 1) as f32, row));
         }
-        painter.line_segment([pos2(rect.left(), y_sec), pos2(rect.right(), y_sec)], Stroke::new(0.5, Color32::from_rgb(40, 40, 52)));
+        painter.line_segment([pos2(rect.left(), y_sec), pos2(rect.right(), y_sec)], Stroke::new(0.5_f32, Color32::from_rgb(40, 40, 52)));
         for (_, y, _) in &bottoms {
-            painter.line_segment([pos2(rect.left(), *y), pos2(rect.right(), *y)], Stroke::new(0.6, Color32::from_rgb(42, 42, 56)));
+            painter.line_segment([pos2(rect.left(), *y), pos2(rect.right(), *y)], Stroke::new(0.6_f32, Color32::from_rgb(42, 42, 56)));
         }
         let near_bottom = |p: egui::Pos2| bottoms.iter().find(|(_, y, _)| (p.y - y).abs() < 4.0).copied();
         let mut resize_press = false;
@@ -429,7 +429,7 @@ impl App {
             let ir = Rect::from_min_max(pos2(r.left(), r.bottom() - 4.0), pos2(r.left() + r.width() * s.intensity, r.bottom()));
             painter_c.rect_filled(ir, 0.0, Color32::from_rgb(255, 230, 150));
             if self.sel == Sel::Section(i) {
-                painter_c.rect_stroke(r, 3.0, Stroke::new(2.0, Color32::from_rgb(255, 210, 0)), StrokeKind::Inside);
+                painter_c.rect_stroke(r, 3.0, Stroke::new(2.0_f32, Color32::from_rgb(255, 210, 0)), StrokeKind::Inside);
             }
             let txt = if r.width() > 120.0 { format!("{} · {}", s.label, intensity_label(s.intensity)) } else { s.label.clone() };
             let pc = painter_c.with_clip_rect(r.intersect(content));
@@ -447,17 +447,17 @@ impl App {
                     let v = env.get(k).copied().unwrap_or(0.0);
                     let h = v * (h_en - 6.0);
                     let col = Color32::from_rgb((60.0 + 190.0 * v) as u8, (90.0 + 60.0 * v) as u8, (200.0 - 120.0 * v) as u8);
-                    painter_c.line_segment([pos2(x, y_en + h_en - 2.0), pos2(x, y_en + h_en - 2.0 - h)], Stroke::new(2.0, col));
+                    painter_c.line_segment([pos2(x, y_en + h_en - 2.0), pos2(x, y_en + h_en - 2.0 - h)], Stroke::new(2.0_f32, col));
                 }
                 x += 2.0;
             }
             if pps > 25.0 {
                 let (a, z) = (start, start + view_len);
                 for &k in ana.kicks.iter().filter(|&&k| k >= a && k <= z) {
-                    painter_c.line_segment([pos2(tx(k), y_en + 2.0), pos2(tx(k), y_en + 8.0)], Stroke::new(1.5, Color32::from_rgb(255, 140, 60)));
+                    painter_c.line_segment([pos2(tx(k), y_en + 2.0), pos2(tx(k), y_en + 8.0)], Stroke::new(1.5_f32, Color32::from_rgb(255, 140, 60)));
                 }
                 for &k in ana.snares.iter().filter(|&&k| k >= a && k <= z) {
-                    painter_c.line_segment([pos2(tx(k), y_en + 9.0), pos2(tx(k), y_en + 14.0)], Stroke::new(1.5, Color32::from_rgb(120, 220, 255)));
+                    painter_c.line_segment([pos2(tx(k), y_en + 9.0), pos2(tx(k), y_en + 14.0)], Stroke::new(1.5_f32, Color32::from_rgb(120, 220, 255)));
                 }
             }
             for &(t, _) in &ana.accents {
@@ -496,9 +496,9 @@ impl App {
             painter_c.rect_filled(Rect::from_min_max(r.min, pos2(x + 4.0, r.max.y)), 1.0, c32(col));
             let selected = self.sel == Sel::Cue(i);
             if selected {
-                painter_c.rect_stroke(r, 2.0, Stroke::new(2.0, Color32::from_rgb(255, 210, 0)), StrokeKind::Inside);
+                painter_c.rect_stroke(r, 2.0, Stroke::new(2.0_f32, Color32::from_rgb(255, 210, 0)), StrokeKind::Inside);
             }
-            painter_c.line_segment([pos2(x, y_hit), pos2(x, y_end)], Stroke::new(0.7, Color32::from_rgba_unmultiplied(col[0], col[1], col[2], 70)));
+            painter_c.line_segment([pos2(x, y_hit), pos2(x, y_end)], Stroke::new(0.7_f32, Color32::from_rgba_unmultiplied(col[0], col[1], col[2], 70)));
             let pc = painter_c.with_clip_rect(r.intersect(content));
             pc.text(pos2(x.max(x0) + 7.0, r.center().y), egui::Align2::LEFT_CENTER, format!("{} {}", i, c.name), egui::FontId::proportional(11.0), Color32::WHITE);
             // the whole bar of the scene is clickable
@@ -517,17 +517,17 @@ impl App {
             let c = h.kind.color();
             painter_c.rect_filled(r, 2.0, c32(c));
             if h.kind == HitKind::Blackout {
-                painter_c.rect_stroke(r, 2.0, Stroke::new(1.0, Color32::GRAY), StrokeKind::Inside);
+                painter_c.rect_stroke(r, 2.0, Stroke::new(1.0_f32, Color32::GRAY), StrokeKind::Inside);
             }
             if self.sel == Sel::Hit(i) {
-                painter_c.rect_stroke(r.expand(2.0), 2.0, Stroke::new(2.0, Color32::from_rgb(255, 210, 0)), StrokeKind::Inside);
+                painter_c.rect_stroke(r.expand(2.0), 2.0, Stroke::new(2.0_f32, Color32::from_rgb(255, 210, 0)), StrokeKind::Inside);
             }
             hit_boxes.push((i, r.expand(2.0)));
         }
 
         // playhead
         let px = tx(now);
-        painter_c.line_segment([pos2(px, rect.top()), pos2(px, y_end)], Stroke::new(1.5, Color32::from_rgb(255, 70, 70)));
+        painter_c.line_segment([pos2(px, rect.top()), pos2(px, y_end)], Stroke::new(1.5_f32, Color32::from_rgb(255, 70, 70)));
 
         // ------------------------------------------------ interaction
         let mut acts: Vec<Act> = vec![];
@@ -646,7 +646,7 @@ impl App {
             pos2(ov.rect.left() + gutter + (start / dur) as f32 * ow, ov.rect.top()),
             pos2(ov.rect.left() + gutter + (((start + view_len) / dur) as f32 * ow).min(ow), ov.rect.bottom()),
         );
-        ovp.rect_stroke(vr, 1.0, Stroke::new(1.0, Color32::WHITE), StrokeKind::Inside);
+        ovp.rect_stroke(vr, 1.0, Stroke::new(1.0_f32, Color32::WHITE), StrokeKind::Inside);
         if ov.dragged() || ov.clicked() {
             if let Some(p) = ov.interact_pointer_pos() {
                 let t = ((p.x - ov.rect.left() - gutter) / ow) as f64 * dur;

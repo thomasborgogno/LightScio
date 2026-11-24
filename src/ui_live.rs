@@ -223,7 +223,7 @@ impl App {
                             })
                             .map(|f| f.name.clone())
                             .unwrap_or_else(|| ts("libero").into());
-                        egui::show_tooltip_at_pointer(ui.ctx(), ui.layer_id(), egui::Id::new("dmx_tip"), |ui| {
+                        egui::Tooltip::always_open(ui.ctx().clone(), ui.layer_id(), egui::Id::new("dmx_tip"), egui::PopupAnchor::Pointer).gap(12.0).show(|ui| {
                             ui.label(crate::i18n::t(&format!("Canale {} = {}  ({owner})", i + 1, v)));
                         });
                     }

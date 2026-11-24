@@ -15,6 +15,7 @@ mod midi;
 mod lanes;
 mod model;
 mod ofl;
+mod patch;
 mod relink;
 mod stage;
 mod ui_analysis;

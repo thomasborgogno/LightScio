@@ -138,7 +138,6 @@ impl App {
             let t = text.to_lowercase();
             words.iter().all(|w| t.contains(w))
         };
-        let defs = self.all_defs();
         let mut pick_def: Option<String> = None;
         let mut pick_ofl: Option<std::path::PathBuf> = None;
         egui::ScrollArea::vertical().max_height(ui.available_height() * 0.5).id_salt("cat_list").auto_shrink([false, false]).show(ui, |ui| {
@@ -351,8 +350,9 @@ impl App {
 
         egui::CentralPanel::default().show(ctx, |ui| {
             ui.horizontal(|ui| {
-                ui.selectable_value(&mut self.stage_mode, StageMode::Plan, ts("🗺 Pianta (trascina i fari)"));
-                ui.selectable_value(&mut self.stage_mode, StageMode::Perspective, ts("🎭 Vista dal pubblico"));
+                ui.selectable_value(&mut self.stage_mode, StageMode::Patch, ts("🔢 Patch DMX"));
+                ui.selectable_value(&mut self.stage_mode, StageMode::Plan, ts("🗺 Palco 2D"));
+                ui.selectable_value(&mut self.stage_mode, StageMode::Perspective, ts("🎭 Palco 2.5D"));
                 ui.separator();
                 let st = &mut self.project.stage;
                 ui.label(ts("Palco"));
@@ -378,6 +378,18 @@ impl App {
                         self.sync_groups(&before);
                     }
                 }
+                StageMode::Patch => {
+                    let uni = self.shared.lock().map(|s| s.universe).unwrap_or([0; 512]);
+                    let mut sel = self.sel_fixture;
+                    let mut set = std::mem::take(&mut self.sel_set);
+                    let mut drag = self.patch_drag.take();
+                    if crate::patch::draw_patch(ui, vec2(avail.x, avail.y - 24.0), &mut self.project, &self.catalog, &uni, &mut sel, &mut set, &mut drag) {
+                        self.status = ts("Indirizzi DMX aggiornati").into();
+                    }
+                    self.sel_fixture = sel;
+                    self.sel_set = set;
+                    self.patch_drag = drag;
+                }
                 StageMode::Perspective => {
                     if let Some(id) = stage::draw_perspective(ui, vec2(avail.x, avail.y - 24.0), &self.project, &self.catalog, &self.states, self.sel_fixture, t) {
                         let add = ui.input(|i| i.modifiers.ctrl || i.modifiers.command || i.modifiers.shift);
@@ -385,11 +397,11 @@ impl App {
                     }
                 }
             }
-            ui.label(
-                RichText::new(ts("Pianta vista dall'alto (in basso il pubblico). Ctrl/Maiusc+clic: aggiungi alla selezione · trascina sul vuoto: selezione a riquadro · trascina un faro: sposta tutti i selezionati."))
-                    .size(11.0)
-                    .color(Color32::GRAY),
-            );
+            let hint = match self.stage_mode {
+                StageMode::Patch => crate::patch::summary(&self.project, &self.catalog, &self.patch_drag),
+                _ => ts("Palco visto dall'alto (in basso il pubblico). Ctrl/Maiusc+clic: aggiungi alla selezione · trascina sul vuoto: selezione a riquadro · trascina un faro: sposta tutti i selezionati.").to_string(),
+            };
+            ui.label(RichText::new(hint).size(11.0).color(Color32::GRAY));
         });
     }
 
@@ -428,9 +440,15 @@ impl App {
                 let used = self.project.next_address(&self.catalog) - 1;
                 ui.label(RichText::new(crate::i18n::t(&format!("canali: {used}/512"))).color(Color32::GRAY));
             });
-            for c in self.conflicts().iter().take(4) {
-                ui.label(RichText::new(format!("⚠ {c}")).color(Color32::from_rgb(255, 150, 80)));
-            }
+            // Inside its own child Ui: the number of warnings changes while typing an
+            // address, and must not shift the auto ids of the widgets below (it would
+            // make the address field lose focus after the first digit).
+            let conflicts = self.conflicts();
+            ui.vertical(|ui| {
+                for c in conflicts.iter().take(4) {
+                    ui.label(RichText::new(format!("⚠ {c}")).color(Color32::from_rgb(255, 150, 80)));
+                }
+            });
             ui.separator();
             let order: Vec<u32> = Group::ALL.iter().flat_map(|g| self.project.fixtures.iter().filter(|f| f.group == *g).map(|f| f.id).collect::<Vec<_>>()).collect();
             let mut clicked: Option<(u32, bool, bool)> = None;

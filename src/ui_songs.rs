@@ -8,9 +8,6 @@ use egui::{Color32, RichText};
 
 pub enum SecAct {
     Play(f64, f64),
-    Stop,
-    /// Move the start of section i (and the end of section i-1) by n bars.
-    MoveStart(usize, i32),
     Merge(usize),
     SplitAt(f64),
 }
@@ -19,7 +16,6 @@ impl App {
     pub fn section_action(&mut self, a: SecAct) {
         match a {
             SecAct::Play(from, until) => self.play_range(from, Some(until)),
-            SecAct::Stop => self.pause(),
             other => {
                 self.push_undo();
                 let Some(s) = self.cur_song_mut() else { return };
@@ -27,18 +23,6 @@ impl App {
                 let bar = an.bar_len().max(0.1);
                 let snap_bar = |t: f64| an.snap_bar(t);
                 match other {
-                    SecAct::MoveStart(i, n) => {
-                        if i == 0 || i >= s.sections.len() {
-                            return;
-                        }
-                        let lo = s.sections[i - 1].start + bar * 0.99;
-                        let hi = s.sections[i].end - bar * 0.99;
-                        let t = snap_bar(s.sections[i].start) + n as f64 * bar;
-                        if t >= lo && t <= hi {
-                            s.sections[i].start = t;
-                            s.sections[i - 1].end = t;
-                        }
-                    }
                     SecAct::Merge(i) => {
                         if i + 1 < s.sections.len() {
                             let end = s.sections[i + 1].end;
@@ -155,8 +139,6 @@ impl App {
 
         egui::CentralPanel::default().show(ctx, |ui| {
             let busy = self.job_running("Analisi") || self.job_running("Carico");
-            let now = self.now();
-            let playing = self.is_playing();
             let si = self.song;
             let Some(song) = self.project.songs.get_mut(si) else {
                 ui.centered_and_justified(|ui| {

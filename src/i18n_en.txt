@@ -171,15 +171,21 @@ Quanti ||| How many
 Togli il modello dal progetto (solo se non usato) ||| Remove the model from the project (only if unused)
 ✏ Nuovo faro personalizzato… ||| ✏ New custom fixture…
 Il mio faro ||| My fixture
-🗺 Pianta (trascina i fari) ||| 🗺 Plan (drag the lights)
-🎭 Vista dal pubblico ||| 🎭 Audience view
+🗺 Palco 2D ||| 🗺 2D stage
+🎭 Palco 2.5D ||| 🎭 2.5D stage
+🔢 Patch DMX ||| 🔢 DMX patch
+Indirizzi DMX aggiornati ||| DMX addresses updated
+Canale {} · {} · {}: {} · valore {} ||| Channel {} · {} · {}: {} · value {}
+Canale {} · libero ||| Channel {} · free
+Sposto {} fari → DMX {}-{} ||| Moving {} lights → DMX {}-{}
+{} canali usati, {} liberi · trascina un faro per cambiarne l'indirizzo (si spostano tutti i selezionati) · Ctrl/Maiusc+clic: aggiungi alla selezione ||| {} channels used, {} free · drag a light to change its address (all selected ones move) · Ctrl/Shift+click: add to selection
 Palco ||| Stage
  m largo |||  m wide
  m profondo |||  m deep
 Americane ||| Trusses
  m fronte |||  m front
  m fondo |||  m back
-Pianta vista dall'alto (in basso il pubblico). Ctrl/Maiusc+clic: aggiungi alla selezione · trascina sul vuoto: selezione a riquadro · trascina un faro: sposta tutti i selezionati. ||| Plan seen from above (audience at the bottom). Ctrl/Shift+click: add to selection · drag on empty space: box selection · drag a light: move all selected ones.
+Palco visto dall'alto (in basso il pubblico). Ctrl/Maiusc+clic: aggiungi alla selezione · trascina sul vuoto: selezione a riquadro · trascina un faro: sposta tutti i selezionati. ||| Stage seen from above (audience at the bottom). Ctrl/Shift+click: add to selection · drag on empty space: box selection · drag a light: move all selected ones.
 Ripatch automatico ||| Auto patch
 Riassegna gli indirizzi DMX in sequenza, senza sovrapposizioni ||| Reassign DMX addresses in sequence, without overlaps
 Indirizzi DMX riassegnati ||| DMX addresses reassigned

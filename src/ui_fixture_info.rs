@@ -115,7 +115,7 @@ fn swatches(ui: &mut egui::Ui, colors: &[[u8; 3]]) {
     for c in colors.iter().take(4) {
         let (r, _) = ui.allocate_exact_size(vec2(11.0, 11.0), egui::Sense::hover());
         ui.painter().rect_filled(r, 2.0, Color32::from_rgb(c[0], c[1], c[2]));
-        ui.painter().rect_stroke(r, 2.0, egui::Stroke::new(1.0, Color32::from_gray(90)), egui::StrokeKind::Inside);
+        ui.painter().rect_stroke(r, 2.0, egui::Stroke::new(1.0_f32, Color32::from_gray(90)), egui::StrokeKind::Inside);
     }
 }
 

@@ -267,9 +267,9 @@ impl App {
             bottoms.push((Lane::Track, y_tr + h_tr * (row + 1) as f32, row));
         }
         for (_, y, _) in &bottoms {
-            painter.line_segment([pos2(rect.left(), *y), pos2(rect.right(), *y)], Stroke::new(0.6, Color32::from_rgb(42, 42, 56)));
+            painter.line_segment([pos2(rect.left(), *y), pos2(rect.right(), *y)], Stroke::new(0.6_f32, Color32::from_rgb(42, 42, 56)));
         }
-        painter.line_segment([pos2(rect.left(), y_sec), pos2(rect.right(), y_sec)], Stroke::new(0.6, Color32::from_rgb(42, 42, 56)));
+        painter.line_segment([pos2(rect.left(), y_sec), pos2(rect.right(), y_sec)], Stroke::new(0.6_f32, Color32::from_rgb(42, 42, 56)));
 
         // anchors (first downbeat + extra downbeats)
         let anchors: Vec<(Option<usize>, f64)> = std::iter::once((None, ana.offset))
@@ -283,7 +283,7 @@ impl App {
                 col,
                 Stroke::NONE,
             ));
-            pc.line_segment([pos2(x, y_r + 12.0), pos2(x, y_end)], Stroke::new(1.2, col.gamma_multiply(0.7)));
+            pc.line_segment([pos2(x, y_r + 12.0), pos2(x, y_end)], Stroke::new(1.2_f32, col.gamma_multiply(0.7)));
         }
 
         // sections
@@ -297,7 +297,7 @@ impl App {
             let ir = Rect::from_min_max(pos2(r.left(), r.bottom() - 4.0), pos2(r.left() + r.width() * s.intensity, r.bottom()));
             pc.rect_filled(ir, 0.0, Color32::from_rgb(255, 230, 150));
             if self.ed.sel == Some(i) {
-                pc.rect_stroke(r, 3.0, Stroke::new(2.0, Color32::from_rgb(255, 210, 0)), StrokeKind::Inside);
+                pc.rect_stroke(r, 3.0, Stroke::new(2.0_f32, Color32::from_rgb(255, 210, 0)), StrokeKind::Inside);
             }
             let txt = if r.width() > 130.0 { format!("{} · {}", s.label, intensity_label(s.intensity)) } else { s.label.clone() };
             let p2 = pc.with_clip_rect(r.intersect(content));
@@ -317,7 +317,7 @@ impl App {
                     let v = ana.env.get((t * ENV_FPS) as usize).copied().unwrap_or(0.0);
                     let hh = v * (h_en - 6.0);
                     let col = Color32::from_rgb((60.0 + 190.0 * v) as u8, (90.0 + 60.0 * v) as u8, (200.0 - 120.0 * v) as u8);
-                    pc.line_segment([pos2(x, y_tr - 2.0), pos2(x, y_tr - 2.0 - hh)], Stroke::new(2.0, col));
+                    pc.line_segment([pos2(x, y_tr - 2.0), pos2(x, y_tr - 2.0 - hh)], Stroke::new(2.0_f32, col));
                 }
                 x += 2.0;
             }
@@ -334,7 +334,7 @@ impl App {
         }
         // playhead
         let px = tx(now);
-        pc.line_segment([pos2(px, rect.top()), pos2(px, y_end)], Stroke::new(1.5, Color32::from_rgb(255, 70, 70)));
+        pc.line_segment([pos2(px, rect.top()), pos2(px, y_end)], Stroke::new(1.5_f32, Color32::from_rgb(255, 70, 70)));
 
         // ---------------- interaction
         let mut acts: Vec<EAct> = vec![];
@@ -447,7 +447,7 @@ impl App {
             pos2(ov.rect.left() + gutter + (start / dur) as f32 * ow, ov.rect.top()),
             pos2(ov.rect.left() + gutter + (((start + view_len) / dur) as f32 * ow).min(ow), ov.rect.bottom()),
         );
-        ovp.rect_stroke(vr, 1.0, Stroke::new(1.0, Color32::WHITE), StrokeKind::Inside);
+        ovp.rect_stroke(vr, 1.0, Stroke::new(1.0_f32, Color32::WHITE), StrokeKind::Inside);
         if ov.dragged() || ov.clicked() {
             if let Some(p) = ov.interact_pointer_pos() {
                 let t = ((p.x - ov.rect.left() - gutter) / ow) as f64 * dur;
