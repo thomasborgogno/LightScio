@@ -198,6 +198,7 @@ impl App {
         if replace {
             self.project.stage = r.stage;
             self.project.fixtures = r.fixtures;
+            self.manual = Default::default();
         } else {
             // add after the current ones: new ids, DMX addresses after the last used one
             let addr = self.project.next_address(&self.catalog);

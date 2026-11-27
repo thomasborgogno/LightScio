@@ -84,7 +84,7 @@ pub fn spawn(shared: SharedHandle) {
             let mut retry_at = Instant::now();
             loop {
                 let frame_start = Instant::now();
-                let (project, t, song_idx, blackout, identify, want, proto, fps, test) = {
+                let (project, t, song_idx, blackout, identify, want, proto, fps, test, manual) = {
                     let mut s = match shared.lock() {
                         Ok(s) => s,
                         Err(_) => return,
@@ -107,9 +107,12 @@ pub fn spawn(shared: SharedHandle) {
                         s.dmx.protocol,
                         s.dmx.fps.clamp(10, 44),
                         s.test_channels.clone(),
+                        s.manual.clone(),
                     )
                 };
                 let song = project.songs.get(song_idx);
+                // blackout and "identify" win over the hand-set channels
+                let plain = !blackout && identify.is_none();
                 let states = engine::render(&engine::RenderInput {
                     project: &project,
                     catalog: &catalog,
@@ -119,6 +122,9 @@ pub fn spawn(shared: SharedHandle) {
                     identify,
                 });
                 let mut uni = engine::universe(&project, &catalog, &states);
+                if plain {
+                    engine::apply_manual(&project, &catalog, &manual, &mut uni);
+                }
                 if let Some(test) = test {
                     uni = [0; 512];
                     for (c, v) in test {

@@ -172,6 +172,10 @@ pub struct App {
     pub confirm_close: bool,
     /// Skip the unsaved-changes check (app is closing for good).
     pub force_close: bool,
+    /// "Canali" panel (manual faders) open under the stage.
+    pub show_faders: bool,
+    /// Channels set by hand in the "Canali" panel; they override the show.
+    pub manual: engine::Manual,
 }
 
 #[derive(Clone, Copy, PartialEq, Debug)]
@@ -333,6 +337,8 @@ impl App {
             saved_hash: 0,
             confirm_close: false,
             force_close: false,
+            show_faders: false,
+            manual: Default::default(),
         };
         if let Some(a) = audio {
             app.player.set_buffer(Some(a));
@@ -404,6 +410,11 @@ impl App {
                         }
                     }
                     app.search = "par".into();
+                    // optional: LUCI_FADERS=1 opens the manual channels panel
+                    if std::env::var("LUCI_FADERS").is_ok() {
+                        app.show_faders = true;
+                        app.stage_mode = StageMode::Perspective;
+                    }
                 }
                 "songs" => app.tab = Tab::Songs,
                 "live" => app.tab = Tab::Live,
@@ -882,6 +893,7 @@ impl App {
     pub fn new_project(&mut self) {
         self.stop();
         self.project = Project::default();
+        self.manual = Default::default();
         self.path = None;
         self.song = 0;
         self.sel = Sel::None;
@@ -901,6 +913,7 @@ impl App {
         self.stop();
         let (p, a, pk) = demo_project();
         self.project = p;
+        self.manual = Default::default();
         self.path = None;
         self.song = 0;
         self.sel = Sel::None;
@@ -923,6 +936,7 @@ impl App {
                 Ok(pr) => {
                     self.stop();
                     self.project = pr;
+                    self.manual = Default::default();
                     self.path = Some(p.clone());
                     self.song = 0;
                     self.sel = Sel::None;
@@ -1159,6 +1173,13 @@ impl App {
                         self.show_prefs = !self.show_prefs;
                     }
                     ui.label(RichText::new(&self.project.name).color(Color32::GRAY));
+                    if !self.manual.values.is_empty() {
+                        let n = self.manual.count();
+                        let b = egui::Button::new(RichText::new(t(&format!("🎚 {n} canali manuali ✕"))).color(Color32::BLACK)).fill(Color32::from_rgb(255, 170, 40));
+                        if ui.add(b).on_hover_text(ts("Questi canali sono impostati a mano e sovrascrivono lo show. Clic: tornano tutti allo show.")).clicked() {
+                            self.manual = Default::default();
+                        }
+                    }
                     let (live, ok) = {
                         let s = self.shared.lock();
                         match s {
@@ -1269,6 +1290,8 @@ impl App {
             .lock()
             .map(|s| s.transport.song)
             .unwrap_or(self.song);
+        // blackout and "identify" win over the hand-set channels (as on the DMX output)
+        let plain = !blackout && identify.is_none();
         self.states = engine::render(&engine::RenderInput {
             project: &self.project,
             catalog: &self.catalog,
@@ -1277,6 +1300,20 @@ impl App {
             blackout,
             identify,
         });
+        if plain {
+            engine::apply_manual_states(&self.project, &self.catalog, &self.manual, &mut self.states);
+        }
+    }
+
+    /// Send the manual channels to the DMX thread when they change.
+    fn sync_manual(&mut self, before: &engine::Manual) {
+        let ids: std::collections::BTreeSet<u32> = self.project.fixtures.iter().map(|f| f.id).collect();
+        self.manual.values.retain(|k, _| ids.contains(&k.0));
+        if self.manual != *before {
+            if let Ok(mut s) = self.shared.lock() {
+                s.manual = self.manual.clone();
+            }
+        }
     }
 
     fn handle_screenshot(&mut self, ctx: &egui::Context) {
@@ -1326,6 +1363,7 @@ impl App {
 impl eframe::App for App {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         self.frame += 1;
+        let manual_before = self.manual.clone();
         self.handle_close(ctx);
         self.poll_jobs();
         self.poll_ofl();
@@ -1355,6 +1393,8 @@ impl eframe::App for App {
         self.compute_states();
         self.top_bar(ctx);
         self.ui_update_banner(ctx);
+        // flash buttons put their channels back every frame while they are held
+        self.manual.flash.clear();
         match self.tab {
             Tab::Rig => self.ui_rig(ctx),
             Tab::Songs => self.ui_songs(ctx),
@@ -1367,6 +1407,7 @@ impl eframe::App for App {
         self.ui_prefs(ctx);
         self.poll_update(ctx);
         self.auto_live_tick();
+        self.sync_manual(&manual_before);
         let busy = self.is_playing() || !self.jobs.is_empty() || self.midi.conn.is_some();
         if busy {
             ctx.request_repaint();

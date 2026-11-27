@@ -20,6 +20,7 @@ mod relink;
 mod stage;
 mod ui_analysis;
 mod ui_convert;
+mod ui_faders;
 mod ui_fixture_info;
 mod ui_live;
 mod ui_rig;

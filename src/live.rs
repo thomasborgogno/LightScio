@@ -88,6 +88,8 @@ pub struct Shared {
     pub last_midi: Option<Instant>,
     /// Manual channel overrides from the test panel (channel index, value).
     pub test_channels: Option<Vec<(usize, u8)>>,
+    /// Channels set by hand in the "Canali" panel (override the show).
+    pub manual: crate::engine::Manual,
     /// Master intensity received by MIDI CC7, picked up by the window.
     pub pending_master: Option<f32>,
 }
@@ -111,6 +113,7 @@ impl Shared {
             midi_clock_count: 0,
             last_midi: None,
             test_channels: None,
+            manual: Default::default(),
             pending_master: None,
         }))
     }

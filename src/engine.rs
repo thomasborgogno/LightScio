@@ -386,3 +386,203 @@ pub fn universe(p: &Project, catalog: &[FixtureDef], states: &[FxState]) -> [u8;
     }
     u
 }
+
+/// Channels set by hand from the "Canali" panel: only touched channels are listed
+/// and they override the show (like the programmer of a lighting desk).
+#[derive(Clone, Default, PartialEq)]
+pub struct Manual {
+    /// (fixture id, channel index) -> value.
+    pub values: std::collections::BTreeMap<(u32, usize), u8>,
+    /// Channels held at full by a flash button.
+    pub flash: std::collections::BTreeSet<(u32, usize)>,
+}
+
+impl Manual {
+    pub fn get(&self, id: u32, ch: usize) -> Option<u8> {
+        if self.flash.contains(&(id, ch)) {
+            Some(255)
+        } else {
+            self.values.get(&(id, ch)).copied()
+        }
+    }
+    pub fn is_empty(&self) -> bool {
+        self.values.is_empty() && self.flash.is_empty()
+    }
+    pub fn touches(&self, id: u32) -> bool {
+        self.values.range((id, 0)..=(id, usize::MAX)).next().is_some() || self.flash.iter().any(|k| k.0 == id)
+    }
+    /// Number of channels currently overriding the show.
+    pub fn count(&self) -> usize {
+        self.values.len() + self.flash.iter().filter(|k| !self.values.contains_key(k)).count()
+    }
+    pub fn release(&mut self, id: u32) {
+        self.values.retain(|k, _| k.0 != id);
+    }
+}
+
+/// Write the manual channels over the show output.
+pub fn apply_manual(p: &Project, catalog: &[FixtureDef], m: &Manual, uni: &mut [u8; 512]) {
+    if m.is_empty() {
+        return;
+    }
+    for f in p.fixtures.iter().filter(|f| m.touches(f.id)) {
+        // channels beyond the model's footprint (model changed meanwhile) belong to other lights
+        let n = p.def(catalog, &f.def_id).map(|d| d.channels.len()).unwrap_or(0);
+        for i in 0..n {
+            put(uni, f, i, m.get(f.id, i));
+        }
+    }
+}
+
+fn put(uni: &mut [u8; 512], f: &FixtureInstance, i: usize, v: Option<u8>) {
+    let a = f.address as usize + i;
+    if let (Some(v), true) = (v, (1..=512).contains(&a)) {
+        uni[a - 1] = v;
+    }
+}
+
+/// Show the manual channels in the stage preview: the fixture's DMX values are
+/// read back into its state (only for the kinds of channel that were touched).
+pub fn apply_manual_states(p: &Project, catalog: &[FixtureDef], m: &Manual, states: &mut [FxState]) {
+    if m.is_empty() {
+        return;
+    }
+    for (f, st) in p.fixtures.iter().zip(states.iter_mut()) {
+        if !m.touches(f.id) {
+            continue;
+        }
+        let Some(def) = p.def(catalog, &f.def_id) else { continue };
+        let mut uni = [0u8; 512];
+        write_dmx(def, f, st, &mut uni);
+        let mut touched = vec![];
+        for i in 0..def.channels.len() {
+            if let Some(v) = m.get(f.id, i) {
+                put(&mut uni, f, i, Some(v));
+                touched.push(def.channels[i].kind);
+            }
+        }
+        read_dmx(def, f, &uni, &touched, st);
+    }
+}
+
+/// Inverse of `write_dmx` for the given kinds of channel.
+fn read_dmx(def: &FixtureDef, inst: &FixtureInstance, uni: &[u8; 512], touched: &[ChannelKind], st: &mut FxState) {
+    use ChannelKind as K;
+    let raw = |k: K| -> Option<u8> {
+        let i = def.channels.iter().position(|c| c.kind == k)?;
+        let a = inst.address as usize + i;
+        (1..=512).contains(&a).then(|| uni[a - 1])
+    };
+    let val = |k: K| raw(k).map(|v| v as f32 / 255.0).unwrap_or(0.0);
+    let has = |k: K| touched.contains(&k);
+    let has_dimmer = def.has(K::Dimmer);
+    if [K::Red, K::Green, K::Blue, K::White, K::Amber].iter().any(|k| has(*k)) {
+        if def.has_rgb() {
+            let (w, a) = (val(K::White), val(K::Amber));
+            let l = [val(K::Red) + w + a, val(K::Green) + w + a * 0.6, val(K::Blue) + w];
+            let mx = l[0].max(l[1]).max(l[2]);
+            if mx > 1e-4 {
+                st.rgb = [l[0] / mx, l[1] / mx, l[2] / mx];
+            }
+            if !has_dimmer {
+                st.dim = mx.min(1.0);
+            }
+        } else if def.has(K::White) && !has_dimmer {
+            st.dim = val(K::White);
+        }
+    }
+    if has(K::ColorWheel) {
+        if let Some(v) = raw(K::ColorWheel) {
+            if let Some(s) = def.color_wheel.iter().min_by_key(|s| (s.value as i32 - v as i32).abs()) {
+                st.rgb = c8(s.color);
+            }
+        }
+    }
+    if has(K::Dimmer) {
+        st.dim = val(K::Dimmer);
+    }
+    let angle = |coarse: K, fine: K, range: f32| {
+        let v = (raw(coarse).unwrap_or(0) as f32 * 256.0 + raw(fine).unwrap_or(0) as f32) / 65535.0;
+        v * range - range * 0.5
+    };
+    if has(K::Pan) || has(K::PanFine) {
+        st.pan = angle(K::Pan, K::PanFine, def.pan_range);
+    }
+    if has(K::Tilt) || has(K::TiltFine) {
+        st.tilt = angle(K::Tilt, K::TiltFine, def.tilt_range);
+    }
+    if has(K::Shutter) {
+        if let Some(v) = raw(K::Shutter) {
+            let (lo, hi) = (def.strobe_min.min(def.strobe_max), def.strobe_min.max(def.strobe_max));
+            st.strobe = 0.0;
+            if v != def.shutter_open {
+                if hi > lo && (lo..=hi).contains(&v) {
+                    st.strobe = ((v as f32 - def.strobe_min as f32) / (def.strobe_max as f32 - def.strobe_min as f32)).clamp(0.05, 1.0);
+                } else if (v as i32 - def.shutter_closed as i32).abs() < (v as i32 - def.shutter_open as i32).abs() {
+                    st.dim = 0.0;
+                }
+            }
+        }
+    }
+    if has(K::Strobe) {
+        let v = raw(K::Strobe).unwrap_or(0);
+        st.strobe = if v >= 10 { ((v - 10) as f32 / 245.0).max(0.05) } else { 0.0 };
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn rig() -> (Project, Vec<FixtureDef>) {
+        let mut p = Project::default();
+        for (id, address) in [(1, 1), (2, 8)] {
+            p.fixtures.push(FixtureInstance {
+                id,
+                def_id: "par-rgb-7".into(),
+                name: format!("PAR {id}"),
+                address,
+                x: 0.0,
+                y: 0.0,
+                z: 0.0,
+                hanging: false,
+                group: Group::FrontWash,
+                aim_pan: 0.0,
+                aim_tilt: 0.0,
+            });
+        }
+        (p, crate::catalog::builtin())
+    }
+
+    #[test]
+    fn manual_channels_override_only_their_light() {
+        let (p, cat) = rig();
+        let mut m = Manual::default();
+        m.values.insert((1, 0), 128); // dimmer
+        m.values.insert((1, 1), 200); // red
+        m.flash.insert((1, 3)); // blue held at full
+        m.values.insert((1, 9), 77); // beyond the 7 channels: must not reach light 2
+        let mut uni = [0u8; 512];
+        apply_manual(&p, &cat, &m, &mut uni);
+        assert_eq!(&uni[0..4], &[128, 200, 0, 255]);
+        assert_eq!(uni[7..14], [0; 7]);
+        assert_eq!(m.count(), 4);
+    }
+
+    #[test]
+    fn preview_follows_manual_channels() {
+        let (p, cat) = rig();
+        let mut m = Manual::default();
+        m.values.insert((1, 0), 255);
+        m.values.insert((1, 1), 255);
+        // the show has the lights dark and blue: red is added by hand
+        let mut states = vec![FxState { rgb: [0.0, 0.0, 1.0], ..Default::default() }; 2];
+        apply_manual_states(&p, &cat, &m, &mut states);
+        assert_eq!(states[0].dim, 1.0);
+        assert_eq!(states[0].rgb, [1.0, 0.0, 1.0]);
+        assert_eq!(states[1].dim, 0.0);
+        m.values.insert((1, 4), 255); // strobe channel
+        apply_manual_states(&p, &cat, &m, &mut states);
+        assert_eq!(states[0].strobe, 1.0);
+    }
+}

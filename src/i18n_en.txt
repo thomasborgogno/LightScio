@@ -732,3 +732,26 @@ creata il {} ||| created {0}
 modificata il {} ||| modified {0}
 ℹ Scheda ||| ℹ Data sheet
 Dati del faro: dimensioni, peso, potenza, canali, ruote, link ||| Fixture data: size, weight, power, channels, wheels, links
+
+# ---------------- manual channels (faders under the stage)
+🎚 Canali ||| 🎚 Channels
+Fader dei canali DMX dei fari selezionati, sotto il palco ||| Faders for the DMX channels of the selected lights, below the stage
+Faro precedente ||| Previous light
+Faro successivo ||| Next light
+Nessun faro selezionato ||| No light selected
+Tutti i {} ({}) ||| All {0} ({1})
+Fari uguali… ||| Same lights…
+Seleziona tutti i fari dello stesso modello: i fader li muovono insieme ||| Select all the lights of the same model: the faders move them together
+{} fari insieme ||| {0} lights together
+({} di altro modello esclusi) ||| ({0} of another model left out)
+I fader valgono solo per i fari selezionati dello stesso modello del faro principale ||| The faders only act on the selected lights of the same model as the main one
+Rilascia tutto ||| Release all
+Tutti i canali manuali tornano allo show ||| All manual channels go back to the show
+↺ Rilascia ||| ↺ Release
+I canali dei fari mostrati tornano allo show ||| The channels of the lights shown go back to the show
+Trascina il fader · doppio tap sul fader: valore di riposo · tasto destro o tieni premuto: torna allo show · ⚡ tieni premuto: flash · doppio tap su ⚡: al massimo ||| Drag the fader · double tap on the fader: rest value · right click or long press: back to the show · ⚡ hold: flash · double tap on ⚡: full
+{} — {}\nDMX {} · riposo {} ||| {0} — {1}\nDMX {2} · rest {3}
+Tieni premuto: flash al massimo · doppio tap: fissa al massimo ||| Hold: flash at full · double tap: set to full
+Seleziona un faro nella lista o sul palco: qui compaiono i suoi canali DMX. ||| Select a light in the list or on the stage: its DMX channels appear here.
+🎚 {} canali manuali ✕ ||| 🎚 {0} manual channels ✕
+Questi canali sono impostati a mano e sovrascrivono lo show. Clic: tornano tutti allo show. ||| These channels are set by hand and override the show. Click: all go back to the show.

@@ -347,12 +347,15 @@ impl App {
 
         self.fixture_panel(ctx);
         self.def_editor(ctx);
+        self.faders_panel(ctx);
 
         egui::CentralPanel::default().show(ctx, |ui| {
             ui.horizontal(|ui| {
                 ui.selectable_value(&mut self.stage_mode, StageMode::Patch, ts("🔢 Patch DMX"));
                 ui.selectable_value(&mut self.stage_mode, StageMode::Plan, ts("🗺 Palco 2D"));
                 ui.selectable_value(&mut self.stage_mode, StageMode::Perspective, ts("🎭 Palco 2.5D"));
+                ui.separator();
+                ui.toggle_value(&mut self.show_faders, ts("🎚 Canali")).on_hover_text(ts("Fader dei canali DMX dei fari selezionati, sotto il palco"));
                 ui.separator();
                 let st = &mut self.project.stage;
                 ui.label(ts("Palco"));
@@ -450,7 +453,7 @@ impl App {
                 }
             });
             ui.separator();
-            let order: Vec<u32> = Group::ALL.iter().flat_map(|g| self.project.fixtures.iter().filter(|f| f.group == *g).map(|f| f.id).collect::<Vec<_>>()).collect();
+            let order = self.list_order();
             let mut clicked: Option<(u32, bool, bool)> = None;
             egui::ScrollArea::vertical().max_height(ui.available_height() * 0.4).id_salt("fx_list").show(ui, |ui| {
                 for g in Group::ALL {
